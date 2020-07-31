@@ -1,0 +1,24 @@
+#!/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge
+#!/usr/local/bin/fontforge
+
+i = 2
+if(i < $argc)
+    Print("1===================================")
+	Print("Open:" + $1)
+    Open($1)
+    Reencode("UnicodeFull")
+
+    Print("2===================================")
+    Print("Merge:" + $argv[i])
+    MergeFonts($argv[i])
+    RenameGlyphs("AGL For New Fonts")
+    
+    Print("3===================================")
+    i = i + 1
+    #Print("Generate:" + $argv[i])
+    #Generate($argv[i])
+
+    Print("Save to:" + $argv[i])
+    Save($argv[i])
+    Print("Font Saved:" + $argv[i])
+endif

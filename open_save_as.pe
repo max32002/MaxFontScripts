@@ -1,0 +1,12 @@
+#!/usr/local/bin/fontforge
+#!/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge
+
+fontname = "edukai"
+fontsource = fontname + ".ttf"
+fontdest = fontname + ".sfdir"
+Print("===================================")
+Print("Opening " + fontsource)
+Open(fontsource)
+Print("Save...")
+Save(fontdest)
+Close()
