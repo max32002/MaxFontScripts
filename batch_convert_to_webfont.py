@@ -177,7 +177,7 @@ ttf_list = [
 for item in ttf_list:
 	item = item.replace(' ','\\ ')
 	target = item.replace('/CJK','/WebFont/CJK')
-	target = target.replace('.ttf','.woff')
+	target = target.replace('.ttf','.woff2')
 	cmd = "/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge ~/Documents/sh/generate.py --input %s --output %s" % (item,target)
 	print(cmd)
 

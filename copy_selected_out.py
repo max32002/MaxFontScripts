@@ -11,18 +11,6 @@ import shutil
 
 import argparse
 
-def output_to_file(myfile, myfont_set):
-    for item in myfont_set:
-        try:
-            #output_string = "%s(%s)" % (chr(item),str(hex(item))[2:])
-            output_string = "%s" % (chr(item))
-        except Exception as exc:
-            print("error item:%d" %(item))
-            print("error item(hex):%s" %(str(hex(item))))
-            raise
-            #pass
-        myfile.write(output_string)
-
 def copy_out(args):
     source_ff = args.input
 
@@ -142,7 +130,7 @@ def copy_out(args):
 
 def cli():
     parser = argparse.ArgumentParser(
-            description="Converts fonts using FontForge")
+            description="Get selected glyph from FontForge directory")
 
     parser.add_argument("--input",
         help="input more glyph font sfdir folder",
