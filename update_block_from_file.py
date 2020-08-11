@@ -2,11 +2,14 @@
 #encoding=utf-8
 
 from os import listdir, remove, rename
-from os.path import join, exists, splitext
-
+from os.path import join, exists, isfile, islink, splitext
+from pathlib import Path
 import argparse
 
-def update_kerning_info(first_path,second_path, begin_string, resume_string):
+def update_block_between_files(first_path,second_path, begin_string, resume_string):
+    output_debug_message = False
+    #output_debug_message = True
+
     output_filepath = first_path + ".tmp"
 
     less_file = open(first_path, 'r')
@@ -30,6 +33,8 @@ def update_kerning_info(first_path,second_path, begin_string, resume_string):
         output_file.write(x_line)
         x_line = less_file.readline()
 
+    if output_debug_message:
+        print("first part interrupt:", is_less_file_seeked_begin)
 
     # second part use more.
     is_more_file_seeked_begin = False
@@ -38,9 +43,10 @@ def update_kerning_info(first_path,second_path, begin_string, resume_string):
         if left_part_Second_Begin == x_line[:left_part_Second_Begin_length]:
             is_more_file_seeked_begin = True
 
-        if left_part_First_Resume == x_line[:left_part_First_Resume_length]:
-            # more part, end here.
-            break
+        if left_part_First_Resume_length > 0:
+            if left_part_First_Resume == x_line[:left_part_First_Resume_length]:
+                # more part, end here.
+                break
 
         is_our_line = False
         if is_less_file_seeked_begin and is_more_file_seeked_begin:
@@ -51,20 +57,26 @@ def update_kerning_info(first_path,second_path, begin_string, resume_string):
             output_file.write(x_line)
         x_line = more_file.readline()
 
+    if output_debug_message:
+        print("second part interrupt:", is_more_file_seeked_begin)
+
     # third part use less.
-    if is_less_file_seeked_begin and is_more_file_seeked_begin:
-        x_line = less_file.readline()
-        is_our_line = False
-        while x_line:
-            if not is_our_line:
-                if left_part_First_Resume == x_line[:left_part_First_Resume_length]:
-                    is_our_line = True
-
-            if is_our_line:
-                output_file.write(x_line)
-
+    is_our_line = False
+    if left_part_First_Resume_length > 0:
+        if is_less_file_seeked_begin and is_more_file_seeked_begin:
             x_line = less_file.readline()
+            while x_line:
+                if not is_our_line:
+                    if left_part_First_Resume == x_line[:left_part_First_Resume_length]:
+                        is_our_line = True
 
+                if is_our_line:
+                    output_file.write(x_line)
+
+                x_line = less_file.readline()
+
+    if output_debug_message:
+        print("third part interrupt:", is_our_line)
 
     less_file.close()
     more_file.close()
@@ -72,6 +84,16 @@ def update_kerning_info(first_path,second_path, begin_string, resume_string):
 
     remove(first_path)
     rename(output_filepath, first_path)
+
+def try_stat(path):
+    ret = False
+    from os import stat
+    try:
+        stat(path)
+        ret = True
+    except OSError as e:
+        pass
+    return ret
 
 def copy_out(args):
     second_path, first_path = args.second, args.first
@@ -85,14 +107,48 @@ def copy_out(args):
 
     file_count = 1
     update_file_count = 0
-    if exists(first_path) and exists(second_path):
-        update_kerning_info(first_path,second_path, begin_string, resume_string)
-        update_file_count += 1
-    else:
-        print("some file not exists.")
 
-    print("check file count:",file_count)
-    print("update file count:",update_file_count)
+    is_pass_all_check = True
+    if is_pass_all_check:
+        # isfile will be False, if symlink
+        # under symlink, all is false @_@;
+        # please don't use under symlink.
+        if False:
+            print("exists(first_path)", exists(first_path))
+            print("isfile(first_path)", isfile(first_path))
+            print("islink(first_path)", islink(first_path))
+            print("is_symlink(first_path)", Path(first_path).is_symlink())
+            print('try_stat()',try_stat(first_path))
+
+        if not exists(first_path):
+            is_pass_all_check = False
+            print("Error: first path not exists:", first_path)
+        else:
+            if not isfile(first_path):
+                is_pass_all_check = False
+                print("Error: first file not exists:", first_path)
+    
+    if is_pass_all_check:
+        # under symlink, all is false @_@;
+        # please don't use under symlink.
+        if not exists(second_path):
+            is_pass_all_check = False
+            print("Error: second path not exists:", second_path)
+        else:
+            if not isfile(second_path):
+                is_pass_all_check = False
+                print("Error: second file not exists:", second_path)
+    
+    if is_pass_all_check:
+        if len(begin_string) == 0:
+            is_pass_all_check = False
+            print("Error: begin string is empty!")
+
+    if is_pass_all_check:
+        update_block_between_files(first_path,second_path, begin_string, resume_string)
+        update_file_count += 1
+        print("check file count:",file_count)
+        print("update file count:",update_file_count)
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -115,7 +171,8 @@ def cli():
 
     parser.add_argument("--resume",
         help="first file resume string",
-        required=True,
+        default="",
+        required=False,
         type=str)
 
     args = parser.parse_args()

@@ -192,7 +192,7 @@ def cli():
 
     parser.add_argument("--copy",
         help="generate glyth file",
-        default="False",
+        default="True",
         type=str)
 
     parser.add_argument("--file_begin",
