@@ -79,8 +79,17 @@ def export(ff_tmp, out_path, export_format, pixelsize):
             #continue
 
         #filename="U_%d.svg" % (unicode_int)
+
+        # due to the file count too large.
+        profix_folder = str(unicode_int)[:1]
+        target_folder = os.path.join(out_path,profix_folder)
+        if not exists(target_folder):
+            mkdir(target_folder)
+        else:
+            pass
+
         filename="U_%d.%s" % (unicode_int,export_format)
-        target_path = os.path.join(out_path,filename)
+        target_path = os.path.join(target_folder,filename)
         if export_format in ['bmp','png']:
             glyph.export(target_path,pixelsize=pixelsize,bitdepth=1)
         else:
