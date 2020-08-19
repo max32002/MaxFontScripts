@@ -6,6 +6,7 @@ import GlyphCompare
 
 from os import remove
 from os.path import join, exists, abspath
+from os import mkdir
 
 import json
 import argparse
@@ -1022,89 +1023,25 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
 
     output_file.close()
 
-def cli():
-    parser = argparse.ArgumentParser(
-            description="Converts fonts using FontForge")
-
-    parser.add_argument("--input",
-        help="input font file",
-        required=True,
-        type=str)
-
-    parser.add_argument("--tmp",
-        help="tmp font folder",
-        default='tmp.sfdir',
-        type=str)
-
-    parser.add_argument("--output",
-        help="output font folder",
-        default='new.sfdir',
-        type=str)
-
-    parser.add_argument("--file",
-        help="lost chars file to auto compose",
-        default='ff_import.txt',
-        type=str)
-
-    parser.add_argument("--skip_list",
-        help="verified glyph not able to reuse in this font",
-        default='ff_skip_list.txt',
-        type=str)
-
-    parser.add_argument("--thin_component",
-        help="thin component",
-        default='ff_thin_component.txt',
-        type=str)
-
-    parser.add_argument("--heavy_component",
-        help="heavy component",
-        default='ff_heavy_component.txt',
-        type=str)
-
-    parser.add_argument("--skip_average_redical",
-        help="redical don't use average mode component",
-        default='ff_skip_average_mode_redical.txt',
-        type=str)
-
-    parser.add_argument("--reuse_component",
-        help="verified reuse component",
-        default='reuse.sfdir',
-        type=str)
-
-    parser.add_argument("--clean",
-        help="clean glyphs before re-transform",
-        default='True',
-        type=str)
-
-    parser.add_argument("--preview",
-        help="user ff to preview",
-        default='True',
-        type=str)
-
-    parser.add_argument("--debug",
-        help="show debug info",
-        default='False',
-        type=str)
-
-    parser.add_argument("--log_file",
-        help="travel log filename",
-        default='compose.log',
-        type=str)
-
-    parser.add_argument("--shake",
-        help="shake redical for handwriting font",
-        default='True',
-        type=str)
-
+def main(args):
     args = parser.parse_args()
 
-    # global setting.
+    # check input.
+    pass_input_check = True
+
+    # read configs.
     import_file = args.file
-    skip_list_file = args.skip_list
     working_ff = args.input
+
+    skip_list_file = args.skip_list
     target_ff = args.output
     tmp_ff = args.tmp
     shake_redical = args.shake
+
+    if exists(target_ff):
+    if exists(working_ff):
+        pass_input_check = False
+
 
     thin_component_filepath = args.thin_component
     heavy_component_filepath = args.heavy_component
@@ -1140,6 +1077,85 @@ def cli():
 
     if args.preview == "True":
         preview(target_ff)
+
+
+def cli():
+    parser = argparse.ArgumentParser(
+            description="auto compose glyph")
+
+    parser.add_argument("--input",
+        help="input font sfdir folder",
+        required=True,
+        type=str)
+
+    parser.add_argument("--tmp",
+        help="tmp font sfdir folder",
+        default='tmp.sfdir',
+        type=str)
+
+    parser.add_argument("--output",
+        help="output font folder",
+        default='new.sfdir',
+        type=str)
+
+    parser.add_argument("--file",
+        help="lost chars file to auto compose",
+        default='ff_import.txt',
+        required=True,
+        type=str)
+
+    parser.add_argument("--skip_list",
+        help="verified glyph not able to reuse in this font",
+        default='ff_skip_list.txt',
+        type=str)
+
+    parser.add_argument("--thin_component",
+        help="thin component",
+        default='ff_thin_component.txt',
+        type=str)
+
+    parser.add_argument("--heavy_component",
+        help="heavy component",
+        default='ff_heavy_component.txt',
+        type=str)
+
+    parser.add_argument("--skip_average_redical",
+        help="redical don't use average mode component",
+        default='ff_skip_average_mode_redical.txt',
+        type=str)
+
+    #PS: this is TODO feature, not implement now.
+    parser.add_argument("--reuse_component",
+        help="verified reuse component",
+        default='reuse.sfdir',
+        type=str)
+
+    parser.add_argument("--clean",
+        help="clean glyphs before re-transform",
+        default='True',
+        type=str)
+
+    parser.add_argument("--preview",
+        help="user ff to preview",
+        default='True',
+        type=str)
+
+    parser.add_argument("--debug",
+        help="show debug info",
+        default='False',
+        type=str)
+
+    parser.add_argument("--log_file",
+        help="travel log filename",
+        default='compose.log',
+        type=str)
+
+    parser.add_argument("--shake",
+        help="shake redical for handwriting font",
+        default='True',
+        type=str)
+
+    main(args)
 
 if __name__ == "__main__":
     cli()

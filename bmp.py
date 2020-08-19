@@ -34,7 +34,7 @@ def resize(filename, width):
 
     return ret
 
-def export(ff_tmp, out_path, export_format, pixelsize):
+def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True):
     print("Open font:", ff_tmp)
     print("Save dir:", out_path)
     print("Save format:", export_format)
@@ -43,7 +43,6 @@ def export(ff_tmp, out_path, export_format, pixelsize):
         mkdir(out_path)
     else:
         pass
-
 
     myfont=fontforge.open(ff_tmp)
     myfont.selection.all()
@@ -90,24 +89,32 @@ def export(ff_tmp, out_path, export_format, pixelsize):
 
         filename="U_%d.%s" % (unicode_int,export_format)
         target_path = os.path.join(target_folder,filename)
-        if export_format in ['bmp','png']:
-            glyph.export(target_path,pixelsize=pixelsize,bitdepth=1)
-        else:
-            glyph.export(target_path)
-        export_counter += 1
-        #glyph.export(filename)
-        #glyph.export(filename,usetransform=True)
-        #glyph.export(filename,usesystem=True)
-        #break
 
-        #print("width:",glyph.width)
+        export_flag = True
 
-        is_convert = False
-        # resize Chinese Word only.
-        # 歐文的字，可能會故意出血到畫框以外。
-        if glyph.width >= 960:
-            is_convert = resize(target_path,glyph.width)
+        if not force_overwrite:
+            # some file is lost.
+            if exists(target_path):
+                # skip export.
+                export_flag = False
 
+        if export_flag:
+            if export_format in ['bmp','png']:
+                glyph.export(target_path,pixelsize=pixelsize,bitdepth=1)
+            else:
+                glyph.export(target_path)
+            export_counter += 1
+            #glyph.export(filename)
+            #glyph.export(filename,usetransform=True)
+            #glyph.export(filename,usesystem=True)
+            #break
+            #print("width:",glyph.width)
+
+            is_convert = False
+            # resize Chinese Word only.
+            # 歐文的字，可能會故意出血到畫框以外。
+            if glyph.width >= 960:
+                is_convert = resize(target_path,glyph.width)
 
         if idx % 1000 == 0:
             print("Processing (%d)export: %d" % (idx, export_counter))
@@ -139,9 +146,18 @@ def cli():
         default=1000,
         type=int)
 
+    parser.add_argument("--overwrite",
+        help="force overwrite",
+        default="True",
+        type=str)
 
     args = parser.parse_args()
-    export(args.input, args.output, args.format, args.pixelsize)
+
+    force_overwrite = True
+    if not args.format == "True":
+        force_overwrite = False
+
+    export(args.input, args.output, args.format, args.pixelsize, force_overwrite=force_overwrite)
 
 if __name__ == "__main__":
     cli()

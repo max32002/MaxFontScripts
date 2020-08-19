@@ -24,6 +24,8 @@ ttf_list = [
 ,'~/Documents/git/swei-xd/'
 ,'~/Documents/git/swei-rainbow-leg/'
 ,'~/Documents/git/swei-gothic-leg/'
+,'~/Documents/git/swei-nut-leg/'
+,'~/Documents/git/swei-nut-sans/'
 ]
 
 for item in ttf_list:
