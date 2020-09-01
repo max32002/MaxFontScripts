@@ -2,12 +2,26 @@
 分享Max收集到的字型相關腳本，Max command line scripts for font.
 
 ## 腳本說明 （File Description)
+* [get_ttf_chars.py](https://github.com/max32002/MaxFontScripts/blob/master/get_ttf_chars.py)
+取得字體的包含文字
+* [copy_selected_out.py](https://github.com/max32002/MaxFontScripts/blob/master/copy_selected_out.py)
+從字體專案裡取得特定文字
 * [merge_font.pe](https://github.com/max32002/MaxFontScripts/blob/master/merge_font.pe)
 合併2個字體檔案為FontForge專案
 * [save_as.py](https://github.com/max32002/MaxFontScripts/blob/master/save_as.py)
 轉成FontForge (all font format to .sfdir)
 * [generate.py](https://github.com/max32002/MaxFontScripts/blob/master/generate.py)
 轉成字體檔 (all font format to .ttf/.otf/.svg/.woff/.woff2)
+
+
+## 文字集合範本 （import_chars_sample)
+在 import_chars_sample 目錄下，附上4個，以 Enter 為分隔符號用的常用字集合。
+* chars_4K_ROW.txt 台灣教育部設定的常見 4千字。
+* chars_10K_ROW.txt 常見的繁體中文 1萬字。
+* chars_hakka_tw_ROW.txt 台灣的台語和客語用字。
+* chars_china_sc_ROW.txt 範圍較大一點的繁體和簡體中文字。
+
+建議：補完前2個文字檔就好了，有多餘的時間，再補最後2個文字檔。
 
 
 ## 相關網頁
@@ -19,6 +33,10 @@ https://max-everyday.com/2020/08/b2-hana-font/
 https://max-everyday.com/2020/08/hana-meatball/
 
 獅尾黑體家族：
+* 獅尾牙膏圓體 Swei Toothpaste
+https://max-everyday.com/2020/09/swei-toothpaste/
+* 獅尾三角黑體 Swei 3T Sans
+https://max-everyday.com/2020/08/swei-3t-sans/
 * 獅尾螺帽腿黑體 Swei Nut Leg
 https://max-everyday.com/2020/08/swei-nut-leg/
 * 獅尾螺帽黑體 Swei Nut Sans
@@ -30,7 +48,7 @@ https://max-everyday.com/2020/07/swei-b2-sans/
 * 獅尾腿圓 Swei Gothic Leg
 https://max-everyday.com/2020/08/swei-gothic-leg/
 * 獅尾彩虹腿 Swei Rainbow Leg
-https://max-everyday.com/2020/08/swei-rainbow-leg/
+https://max-everyday.com/2020/08/swei-toothpaste/
 * 獅尾XD珍珠 Swei XD Pearl
 https://max-everyday.com/2020/07/swei-xd-pearl/
 * 獅尾D露西 Swei D Lucy
@@ -42,7 +60,7 @@ https://max-everyday.com/2020/06/taiwanpearl/
 * 獅尾圓體 Swei Gothic
 https://max-everyday.com/2020/04/swei-gothic/
 * 獅尾黑體 Swei Sans
-https://max-everyday.com/2020/03/swei-sans/
+https://max-everyday.com/2020/03/swei-toothpaste/
 
 獅尾宋體家族：
 * 獅尾B2宋朝 Swei B2 Serif
