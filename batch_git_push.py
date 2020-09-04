@@ -26,7 +26,14 @@ ttf_list = [
 ,'~/Documents/git/swei-gothic-leg/'
 ,'~/Documents/git/swei-nut-leg/'
 ,'~/Documents/git/swei-nut-sans/'
+,'~/Documents/git/swei-3t-sans/'
+,'~/Documents/git/swei-toothpaste/'
+,'~/Documents/git/swei-bat-sans/'
+,'~/Documents/git/swei-bow-leg/'
 ]
+
+# TODO:
+# ,'~/Documents/git/nanifont/'
 
 for item in ttf_list:
 	item = item.replace(' ','\\ ')

@@ -3,7 +3,7 @@
 
 #find ./swei-* -name "*.ttf"
 ttf_list = [
-'./swei-b2-leg/CJK TC/SweiB2LegCJKtc-Regular.ttf'
+'~/Documents/git/swei-b2-leg/CJK TC/SweiB2LegCJKtc-Regular.ttf'
 ,'~/Documents/git/swei-b2-leg/CJK TC/SweiB2LegCJKtc-Thin.ttf'
 ,'~/Documents/git/swei-b2-leg/CJK TC/SweiB2LegCJKtc-Black.ttf'
 ,'~/Documents/git/swei-b2-leg/CJK TC/SweiB2LegCJKtc-Bold.ttf'
@@ -177,8 +177,11 @@ ttf_list = [
 for item in ttf_list:
 	item = item.replace(' ','\\ ')
 	target = item.replace('/CJK','/WebFont/CJK')
-	target = target.replace('.ttf','.woff2')
+	target = target.replace('.ttf','.woff')
 	cmd = "/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge ~/Documents/sh/generate.py --input %s --output %s" % (item,target)
 	print(cmd)
 
+	target = target.replace('.woff','.woff2')
+	cmd = "/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge ~/Documents/sh/generate.py --input %s --output %s" % (item,target)
+	print(cmd)
 

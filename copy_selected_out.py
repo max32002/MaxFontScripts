@@ -156,6 +156,8 @@ def cli():
     # --range 20000,3134F
     #print("unicode_int:", unicode_int)
     #convert_range_list = [[13312,19903],[131072,201551]]
+    # for common non-chinese chars.
+    # --range 0,2E7F
     parser.add_argument("--range",
         help="unicode range hex",
         default='',

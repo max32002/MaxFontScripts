@@ -8,12 +8,16 @@ from os import remove
 from os.path import join, exists, abspath
 from os import mkdir
 
+# to copy file.
+import shutil
+
 import json
 import argparse
 
 import subprocess, sys
 
 import glob
+
 
 def load_config_files(import_file, skip_list_file, thin_component_filepath, heavy_component_filepath, skip_average_redical_filepath):
     target_chars_list = []
@@ -523,13 +527,13 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
 
         output_file.write(('=' * 40) + '\n')
         if ord(char) in ff_unicode_set:
-            messsage = "(%d) char:%s is ready in font." % (char_idx, char)
+            messsage = "idx:%d char:%s is ready." % (char_idx, char)
             output_file.write(messsage + "\n")
 
             if SHOW_DEBUG_MESSAGE:
                 print(messsage)
         else:
-            messsage = "(%d) char:%s is a lost glyph." % (char_idx, char)
+            messsage = "idx:%d char:%s (U+%s) is lost." % (char_idx, char,str(hex(ord(char)))[2:].upper())
             output_file.write(messsage + "\n")
             if SHOW_DEBUG_MESSAGE:
                 print(messsage)
@@ -1024,25 +1028,44 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
     output_file.close()
 
 def main(args):
-    args = parser.parse_args()
-
     # check input.
     pass_input_check = True
+    error_message = ""
 
     # read configs.
+    # main parameter.
     import_file = args.file
     working_ff = args.input
-
-    skip_list_file = args.skip_list
     target_ff = args.output
+
+    # optional parameter
     tmp_ff = args.tmp
+    skip_list_file = args.skip_list
     shake_redical = args.shake
 
-    if exists(target_ff):
-    if exists(working_ff):
-        pass_input_check = False
+    if pass_input_check:
+        if not exists(working_ff):
+            pass_input_check = False
+            error_message = "source FontForge project folder not exist."
 
+    if pass_input_check:
+        if not exists(import_file):
+            pass_input_check = False
+            error_message = "compose list file not exist."
 
+    if pass_input_check:
+        if not exists(target_ff):
+            mkdir(target_ff)
+
+        if not exists(tmp_ff):
+            mkdir(tmp_ff)
+
+        target_font_props = join(target_ff,"font.props")
+        if not exists(target_font_props):
+            source_font_props = join(working_ff,"font.props")
+            shutil.copy(source_font_props,target_font_props)
+
+    # Optional input file.
     thin_component_filepath = args.thin_component
     heavy_component_filepath = args.heavy_component
     skip_average_redical_filepath = args.skip_average_redical
@@ -1073,10 +1096,13 @@ def main(args):
     print("import chars length:", len(target_chars_list))
     print("skip chars length:", len(skip_list))
     
-    travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath)
+    if pass_input_check:
+        travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath)
 
-    if args.preview == "True":
-        preview(target_ff)
+        if args.preview == "True":
+            preview(target_ff)
+    else:
+        print(error_message)
 
 
 def cli():
@@ -1155,6 +1181,7 @@ def cli():
         default='True',
         type=str)
 
+    args = parser.parse_args()
     main(args)
 
 if __name__ == "__main__":

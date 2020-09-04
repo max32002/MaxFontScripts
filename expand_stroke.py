@@ -15,8 +15,6 @@ def expand(args):
     stroke_width = 34
     stroke_width = 28
     
-    stroke_cap = "round"
-    stroke_join = "miter"
     
     # expand_direction is ["light" | "bold"]
     expand_direction = "light"
@@ -32,10 +30,15 @@ def expand(args):
     # basic settings.
     ff_tmp, stroke_width, expand_direction = args.input, args.width, args.expand_direction
 
+    stroke_cap = args.stroke_cap
+    stroke_join = args.stroke_join
+
     print("Open font:", ff_tmp)
     print("Output:", output_ff)
     print("stroke_width:", stroke_width)
     print("expand_direction:", expand_direction)
+    print("stroke_cap:", stroke_cap)
+    print("stroke_join:", stroke_join)
     myfont=fontforge.open(ff_tmp)
     myfont.selection.all()
 
@@ -160,6 +163,16 @@ def cli():
         help="PostScript font weight string",
         type=str)
 
+
+    parser.add_argument("--stroke_cap",
+        help="Expand Stroke Line Cap",
+        default='round',
+        type=str)
+
+    parser.add_argument("--stroke_join",
+        help="Expand Stroke Line Join",
+        default='miter',
+        type=str)
 
     args = parser.parse_args()
 
