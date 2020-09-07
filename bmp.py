@@ -146,9 +146,10 @@ def cli():
         default=1000,
         type=int)
 
+    # default is not overwrite, so run twice is okey.
     parser.add_argument("--overwrite",
         help="force overwrite",
-        default="True",
+        default="False",
         type=str)
 
     args = parser.parse_args()
