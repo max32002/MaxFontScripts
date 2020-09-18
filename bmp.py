@@ -154,9 +154,10 @@ def cli():
 
     args = parser.parse_args()
 
-    force_overwrite = True
-    if not args.format == "True":
-        force_overwrite = False
+    # default not overwrite.
+    force_overwrite = False
+    if args.overwrite == "True":
+        force_overwrite = True
 
     export(args.input, args.output, args.format, args.pixelsize, force_overwrite=force_overwrite)
 

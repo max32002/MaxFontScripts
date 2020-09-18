@@ -29,14 +29,19 @@ ttf_list = [
 ,'~/Documents/git/swei-nut-leg/'
 ,'~/Documents/git/swei-nut-sans/'
 ,'~/Documents/git/swei-3t-sans/'
+,'~/Documents/git/swei-3t-leg/'
 ,'~/Documents/git/swei-toothpaste/'
 ,'~/Documents/git/swei-bat-sans/'
 ,'~/Documents/git/swei-bow-leg/'
 ,'~/Documents/git/swei-bow-sans/'
+,'~/Documents/git/swei-curve-leg/'
+,'~/Documents/git/swei-curve-sans/'
+,'~/Documents/git/nanifont/'
+,'~/Documents/git/swei-del-luna-sans/'
 ]
 
 # TODO:
-# ,'~/Documents/git/nanifont/'
+# 
 
 
 

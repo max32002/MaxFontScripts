@@ -53,7 +53,7 @@ if __name__ == '__main__':
     #unicode_field = 2       # for Noto Sans
     unicode_field = 2
 
-    argument_count = 2
+    argument_count = 1 + 1
     if len(sys.argv)==argument_count:
         source_ff = sys.argv[1]
         if len(source_ff) > 1:

@@ -49,6 +49,6 @@ if __name__ == '__main__':
                 new_glyph_file(output_folder, unicode_int, glyph_width_int)
     else:
         print("Argument must be: %d" % (argument_count -1))
-        print("Ex:%s folder char width" % (sys.argv[0]))
+        print("Ex:%s output_folder chars glyph_width" % (sys.argv[0]))
 
 
