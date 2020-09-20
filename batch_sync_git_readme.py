@@ -38,6 +38,7 @@ ttf_list = [
 ,'~/Documents/git/swei-curve-sans/'
 ,'~/Documents/git/nanifont/'
 ,'~/Documents/git/swei-del-luna-sans/'
+,'~/Documents/git/swei-gospel-sans/'
 ]
 
 # TODO:
