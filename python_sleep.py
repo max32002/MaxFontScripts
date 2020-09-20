@@ -2,6 +2,7 @@
 #encoding=utf-8
 
 import time
+import datetime
 import sys
 
 if __name__ == "__main__":
@@ -28,7 +29,15 @@ if __name__ == "__main__":
                 delay_time_int = eval(delay_time)
             else:
                 delay_time_int = int(delay_time)
-            print("start to sleep %d seconds." % delay_time_int)
+            print("Current Time:", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+            format_time_string = "%d seconds" % delay_time_int
+            if delay_time_int > 60:
+                format_time_string += ",about %d minutes" % (delay_time_int/60)
+            if delay_time_int > 60*60:
+                format_time_string += ",about %d hours" % (delay_time_int/(60*60))
+            print("start to sleep: %s." % format_time_string)
+
             time.sleep(delay_time_int)
             print("end of sleep.")
     else:
