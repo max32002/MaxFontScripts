@@ -95,8 +95,13 @@ def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True):
         if not force_overwrite:
             # some file is lost.
             if exists(target_path):
-                # skip export.
-                export_flag = False
+                
+                # PS: OSError: image file is truncated (0 bytes not processed)
+                # some file maybe broken, and filesize is undert 4K.
+                # if exist file less then 4K, re-generate again.
+                if os.path.getsize(target_path) > 4096:
+                    # skip export.
+                    export_flag = False
 
         if export_flag:
             if export_format in ['bmp','png']:
