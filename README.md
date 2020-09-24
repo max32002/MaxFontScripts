@@ -17,6 +17,7 @@
 ## 文字集合範本 （import_chars_sample)
 在 import_chars_sample 目錄下，附上4個，以 Enter 為分隔符號用的常用字集合。
 * chars_4K_ROW.txt 台灣教育部設定的常見 4千字。
+* chars_5401_cht_ROW.txt Big5 常用漢字 5401字
 * chars_10K_ROW.txt 常見的繁體中文 1萬字。
 * chars_hakka_tw_ROW.txt 台灣的台語和客語用字。
 * chars_china_sc_ROW.txt 範圍較大一點的繁體和簡體中文字。
