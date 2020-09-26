@@ -39,6 +39,7 @@ ttf_list = [
 ,'~/Documents/git/swei-del-luna-leg/'
 ,'~/Documents/git/swei-gospel-sans/'
 ,'~/Documents/git/swei-shear-sans/'
+,'~/Documents/git/swei-shear-leg/'
 ]
 
 # TODO:

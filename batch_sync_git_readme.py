@@ -41,6 +41,7 @@ ttf_list = [
 ,'~/Documents/git/swei-del-luna-leg/'
 ,'~/Documents/git/swei-gospel-sans/'
 ,'~/Documents/git/swei-shear-sans/'
+,'~/Documents/git/swei-shear-leg/'
 ]
 
 # TODO:
@@ -50,7 +51,7 @@ ttf_list = [
 
 for item in ttf_list:
 	item = item.replace(' ','\\ ')
-	reuse_file = '~/Documents/sh/fix_font_readme_urls/README.md'
+	reuse_file = '~/Documents/sh/fix_git_readme_urls/README.md'
 	
 	if item[:1]=="~":
 		item = os.path.expanduser(item)
