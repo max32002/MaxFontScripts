@@ -30,6 +30,7 @@ ttf_list = [
 ,'~/Documents/git/swei-gospel-sans/'
 ,'~/Documents/git/swei-shear-sans/'
 ,'~/Documents/git/swei-spike-sans/'
+,'~/Documents/git/swei-alias-sans/'
 ]
 
 # TODO:
@@ -43,7 +44,7 @@ for item in ttf_list:
 	cmd = "git add python"
 	print(cmd)
 
-	cmd = "git commit -m \"ver 2.116 convertor\""
+	cmd = "git commit -m \"ver 2.118 convertor\""
 	print(cmd)
 
 	cmd = "git push"
