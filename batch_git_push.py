@@ -44,6 +44,7 @@ ttf_list = [
 ,'~/Documents/git/swei-spike-sans/'
 ,'~/Documents/git/swei-spike-leg/'
 ,'~/Documents/git/swei-alias-sans/'
+,'~/Documents/git/swei-alias-leg/'
 ]
 
 # TODO:
