@@ -11,9 +11,19 @@ import argparse
 def save_as(args):
     ff_tmp, out_path = args.input, args.output
 
+    # print info.
     print("Open font:", ff_tmp)
-    myfont=fontforge.open(ff_tmp)
+    merge_from = None
+    merge_tmp = args.merge
+    if not merge_tmp is None:
+        if len(merge_tmp) > 1:
+            merge_from = merge_tmp
+            print("Merge from:", merge_from)
     print("Save sfdir:", out_path)
+
+
+    print("Opening font...")
+    myfont=fontforge.open(ff_tmp)
 
     # font config.
     if not args.comment is None:
@@ -29,7 +39,15 @@ def save_as(args):
     if not args.weight is None:
         myfont.weight = args.weight
 
+    # import.
+    if not merge_from is None:
+        print("Merging font...")
+        preserveCrossFontKerning = True
+        myfont.mergeFonts(merge_from,preserveCrossFontKerning)
+
+    print("Saving font...")
     myfont.save(out_path)
+    print("Done. ^_^")
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -38,6 +56,10 @@ def cli():
     parser.add_argument("--input",
         help="input font file",
         required=True,
+        type=str)
+
+    parser.add_argument("--merge",
+        help="Merges the font in the file into the current font.",
         type=str)
 
     parser.add_argument("--output",
