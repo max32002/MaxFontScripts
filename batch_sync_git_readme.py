@@ -51,6 +51,7 @@ ttf_list = [
 ,'~/Documents/git/swei-fist-leg/'
 ,'~/Documents/git/swei-marker-sans/'
 ,'~/Documents/git/swei-marker-leg/'
+,'~/Documents/git/swei-sugar/'
 ]
 
 # TODO:
