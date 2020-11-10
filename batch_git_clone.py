@@ -50,6 +50,7 @@ ttf_list = [
 ,'~/Documents/git/swei-marker-sans/'
 ,'~/Documents/git/swei-marker-leg/'
 ,'~/Documents/git/swei-sugar/'
+,'~/Documents/git/swei-b2-sugar/'
 ,'~/Documents/git/swei-devil-sans/'
 ,'~/Documents/git/swei-devil-leg/'
 ]
