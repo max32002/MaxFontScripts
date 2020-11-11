@@ -53,6 +53,10 @@ ttf_list = [
 ,'~/Documents/git/swei-b2-sugar/'
 ,'~/Documents/git/swei-devil-sans/'
 ,'~/Documents/git/swei-devil-leg/'
+,'~/Documents/git/swei-bell-sans/'
+,'~/Documents/git/swei-bell-leg/'
+,'~/Documents/git/swei-ax-sans/'
+,'~/Documents/git/swei-ax-leg/'
 ]
 
 # TODO:
