@@ -49,7 +49,7 @@ for item in ttf_list:
 	cmd = "git add python"
 	print(cmd)
 
-	cmd = "git commit -m \"ver 2.129 convertor\""
+	cmd = "git commit -m \"ver 2.130 convertor\""
 	print(cmd)
 
 	cmd = "git push"
