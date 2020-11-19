@@ -38,6 +38,7 @@ ttf_list = [
 ,'~/Documents/git/swei-ax-sans/'
 ,'~/Documents/git/swei-bone-sans/'
 ,'~/Documents/git/swei-match-sans/'
+,'~/Documents/git/swei-dart-sans/'
 ]
 
 # TODO:
