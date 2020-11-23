@@ -63,6 +63,12 @@ ttf_list = [
 ,'~/Documents/git/swei-match-leg/'
 ,'~/Documents/git/swei-dart-sans/'
 ,'~/Documents/git/swei-dart-leg/'
+,'~/Documents/git/swei-fan-sans/'
+,'~/Documents/git/swei-fan-leg/'
+,'~/Documents/git/swei-fan-serif/'
+,'~/Documents/git/swei-jay-sans/'
+,'~/Documents/git/swei-jay-leg/'
+,'~/Documents/git/swei-jay-serif/'
 ]
 
 # TODO:

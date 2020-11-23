@@ -22,6 +22,67 @@ def open_db(dictionary_filename):
 
     return dict_data
 
+def add_converted_char_to_write_alt_code_list(mycode, converted_char, write_alt_code_list, ff_folder, ff_unicode_set, ff_dict, alt_dict):
+    show_debug = False  #online
+    #show_debug = True   #debug
+
+    do_convert_process_flag = False
+    converted_alt_code = 0
+
+    #print("converted_char:", converted_char)
+    if len(converted_char) > 0:
+        converted_alt_code = ord(converted_char)
+        if converted_alt_code > 0:
+            if converted_alt_code != mycode:
+                if not converted_alt_code in write_alt_code_list:
+                    do_convert_process_flag = True
+                    if show_debug:
+                        print("converted_code:", converted_alt_code)
+                        print("do_convert_process_flag:", do_convert_process_flag)
+                else:
+                    if show_debug:
+                        print("this alt code exist in mapping list.")
+
+    # make sure target empty.
+    # purpose: add converted_alt_code to write_alt_code_list
+    if do_convert_process_flag:
+        if converted_alt_code in ff_unicode_set:
+            filename=ff_dict[converted_alt_code]
+            glyth_path = join(ff_folder,filename)
+            if show_debug:
+                print("start to delete the real path:",glyth_path)
+            
+            if exists(glyth_path):
+                remove(glyth_path)
+
+        if converted_alt_code not in write_alt_code_list:
+            write_alt_code_list.append(converted_alt_code)
+
+        # purpose: check converted_alt_code in alt_dict.
+        # make sure target with altnuit empty, delete reference glyph file.
+        # scan full alt_dict mapping.
+        alt_unicode_string = "000000" + str(hex(converted_alt_code)).lower()[2:]
+        alt_unicode_string = alt_unicode_string[-6:]
+        if show_debug:
+            print("alt_unicode_string:", alt_unicode_string)
+
+        for key in alt_dict:
+            if alt_unicode_string in alt_dict[key]:
+                # add key to write alt list.
+                if key not in write_alt_code_list:
+                    write_alt_code_list.append(key)
+
+                filename=ff_dict[key]
+                glyth_path = join(ff_folder,filename)
+                if show_debug:
+                    print("alt key:", key)
+                    print("start to delete the real alt path:",glyth_path)
+                if exists(glyth_path):
+                    remove(glyth_path)
+
+    return write_alt_code_list
+
+
 def append_config_encoding(ff_folder, file_path, unicode_field, alt_dict, ff_unicode_set, ff_dict, sc_ignore_case):
     show_debug = False  #online
     #show_debug = True   #debug
@@ -41,6 +102,9 @@ def append_config_encoding(ff_folder, file_path, unicode_field, alt_dict, ff_uni
 
     x_line = input_file.readline()
     alt_line = ""
+
+    if show_debug:
+        print("checking file:", file_path)
 
     #scan #1 for get info.
     while x_line:
@@ -72,90 +136,133 @@ def append_config_encoding(ff_folder, file_path, unicode_field, alt_dict, ff_uni
     if mycode > 0:
         travl_alt_code_list.append(mycode)
 
-        # PS: should only add one item.
+        # PS: should only add one line.
         if ' ' in alt_line:
             alt_item_array = alt_line.split(' ')
-            right_part = alt_item_array[1]
-            #print("right_part:", right_part)
-            if '.' in right_part:
-                right_part_array = right_part.split('.')
-                alt_unicode_string = right_part_array[0].strip()
-                #print("alt_unicode_string:", alt_unicode_string)
-                if len(alt_unicode_string) > 0:
-                    alt_unicode_int = int(alt_unicode_string,16)
-                    if alt_unicode_int > 0:
-                        travl_alt_code_list.append(alt_unicode_int)
-                        write_alt_code_list.append(alt_unicode_int)
+            for right_part in alt_item_array:
+                #print("right_part:", right_part)
+                if '.' in right_part:
+                    right_part_array = right_part.split('.')
+                    alt_unicode_string = right_part_array[0].strip()
+                    #print("alt_unicode_string:", alt_unicode_string)
+                    if len(alt_unicode_string) > 0:
+                        alt_unicode_int = int(alt_unicode_string,16)
+                        if alt_unicode_int > 0:
+                            if alt_unicode_int not in travl_alt_code_list:
+                                travl_alt_code_list.append(alt_unicode_int)
+                            if alt_unicode_int not in write_alt_code_list:
+                                write_alt_code_list.append(alt_unicode_int)
 
-    # detect converted code to delete.
+
+    # find converted target code glyth file to delete.
     # PS: should one or two item.
     #print("travl_alt_code_list:", travl_alt_code_list)
+
+    # PS: SC(1) mapping to TC(N), 
+    #     so travel TC to find SC, maybe one SC file be deleted many times.
     for alt_code in travl_alt_code_list:
-        #print("current alt_code:", alt_code)
-        do_convert_process_flag = False
-        converted_alt_code = 0
+        if show_debug:
+            print("current alt_code:", alt_code, chr(alt_code))
+            pass
 
         converted_char = ""
         if to_lang == "TC":
             converted_char = HanziConv.toSimplified(chr(alt_code))
 
-        if to_lang == "SC":
-            converted_char = HanziConv.toTraditional(chr(alt_code))
-
-        # only "TC" mode to ignore char.
-        if to_lang == "TC":
+            # "TC" mode to ignore char.
             if converted_char in sc_ignore_case:
                 if show_debug:
                     print('match ignore_case:', converted_char)
-                continue
+            else:
+                write_alt_code_list = add_converted_char_to_write_alt_code_list(mycode, converted_char, write_alt_code_list, ff_folder, ff_unicode_set, ff_dict, alt_dict)
 
-        #print("converted_char:", converted_char)
-        if len(converted_char) > 0:
-            converted_alt_code = ord(converted_char)
-            if converted_alt_code > 0:
-                if converted_alt_code != mycode:
-                    # do nothing
-                    do_convert_process_flag = True
-                    if show_debug:
-                        print("converted_code:", converted_alt_code)
-                        print("do_convert_process_flag:", do_convert_process_flag)
+        if to_lang == "SC":
+            orig_char = chr(alt_code)
 
-        # make sure target empty.
-        if do_convert_process_flag:
-            alt_unicode_string = "000000" + str(hex(converted_alt_code)).lower()[2:] + "."
-            alt_unicode_string = alt_unicode_string[-7:]
+            if False:
+                directly_sc_char = HanziConv.toSimplified(orig_char)
+                is_able_to_sc = True
+                if orig_char == directly_sc_char:
+                    is_able_to_sc = False
+
+            # get normolize char.
+            directly_tc_char = HanziConv.toTraditional(orig_char)
+            is_able_to_tc = True
+            if orig_char == directly_tc_char:
+                is_able_to_tc = False
+
             if show_debug:
-                print("alt_unicode_string:", alt_unicode_string)
+                #print('is_able_to_sc:', is_able_to_sc, directly_sc_char, ord(directly_sc_char))
+                print('is_able_to_tc:', is_able_to_tc, directly_tc_char, ord(directly_tc_char))
 
-            if converted_alt_code in ff_unicode_set:
-                filename=ff_dict[converted_alt_code]
-                glyth_path = join(ff_folder,filename)
-                if show_debug:
-                    print("start to delete the real path:",glyth_path)
-                if exists(glyth_path):
-                    remove(glyth_path)
+            # check Traditional alt.
+            if is_able_to_tc:
 
-            # add to write_alt_code_list
-            # scan full alt_line_list
-            is_new_line_exist = False
-            if alt_unicode_string in alt_line:
-                is_new_line_exist = True
+                # travel each real glyph file.
+                for each_code in ff_unicode_set:
+                    if each_code == mycode:
+                        continue
+                    if each_code == alt_code:
+                        continue
 
-            if not is_new_line_exist:
-                write_alt_code_list.append(converted_alt_code)
+                    sc_char = HanziConv.toSimplified(chr(each_code))
+                    is_able_to_sc = True
+                    if each_code == ord(sc_char):
+                        is_able_to_sc = False
 
-            # make sure target with altnuit empty, delete reference glyph file.
-            # scan full mapping.
-            for key in alt_dict:
-                if alt_unicode_string in alt_dict[key]:
-                    if show_debug:
-                        print("alt key:", key)
-                    filename=ff_dict[key]
-                    glyth_path = join(ff_folder,filename)
-                    if show_debug:
-                        print("start to delete the real alt path:",glyth_path)
-                    if exists(glyth_path):
-                        remove(glyth_path)
+                    if is_able_to_sc and sc_char == orig_char:
+                        # bingo, we found match char.
+                        filename=ff_dict[each_code]
+                        glyth_path = join(ff_folder,filename)
+                        if show_debug:
+                            print("start to delete the real path:",glyth_path)
+                        if exists(glyth_path):
+                            if file_path != file_path:
+                                remove(glyth_path)
+
+                        if each_code not in write_alt_code_list:
+                            write_alt_code_list.append(each_code)
+
+                # travel each alt_dict mapping.
+                for key in alt_dict:
+                    alt_unicode_string = alt_dict[key]
+                    alt_unicode_int = 0
+                    if len(alt_unicode_string) > 0:
+                        alt_unicode_int = int(alt_unicode_string,16)
+                    if alt_unicode_int > 0:
+                        if alt_unicode_int == mycode:
+                            continue
+                        if alt_unicode_int == alt_code:
+                            continue
+
+                        sc_char = HanziConv.toSimplified(chr(alt_unicode_int))
+                        is_able_to_sc = True
+                        if alt_unicode_int == ord(sc_char):
+                            is_able_to_sc = False
+
+                        if is_able_to_sc and sc_char == orig_char:
+                            # bingo, we found match char.
+
+                            # add key to write alt list.
+                            if key not in write_alt_code_list:
+                                write_alt_code_list.append(key)
+
+                            if key in ff_unicode_set:
+                                #PS: all alt_dict key may not all in ff_dict (SC).
+                                filename=ff_dict[key]
+                                glyth_path = join(ff_folder,filename)
+                                if show_debug:
+                                    print("alt key:", key)
+                                    print("start to delete the real alt path:",glyth_path)
+                                if exists(glyth_path):
+                                    if file_path != file_path:
+                                        remove(glyth_path)
+
+                            # there are no 'real' file in all_dict mapping table.
+                            if alt_unicode_int not in write_alt_code_list:
+                                write_alt_code_list.append(alt_unicode_int)
+
+
 
     if show_debug:
         print("mycode:", mycode)
@@ -236,7 +343,6 @@ def scan_files(ff_folder, unicode_field, alt_dict, ff_unicode_set, ff_dict, sc_i
 
             # allow joined filepath deleted in process.
             if exists(source_path):
-                #print("check file:", source_path)
                 append_config_encoding(ff_folder, source_path, unicode_field, alt_dict, ff_unicode_set, ff_dict, sc_ignore_case)
     return my_set, my_dict
 
