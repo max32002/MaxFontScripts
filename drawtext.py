@@ -9,8 +9,10 @@ CANVAS_SIZE = 1000
 CHAR_SIZE = CANVAS_SIZE
 
 if __name__ == '__main__':
-    text = "桌"
-    filename = "outout.png"
+    #text = "桌"
+    text = chr(int('f92d',16))
+    filename = ("000000" + str(hex(ord(text)))[2:])[-6:]
+    filename = "U_" + filename + ".bmp"
 
     # create an image
     out = Image.new("L", (CANVAS_SIZE, CANVAS_SIZE), 255)
@@ -27,9 +29,9 @@ if __name__ == '__main__':
     ascent, descent = font.getmetrics()
     (width, baseline), (offset_x, offset_y) = font.font.getsize(text)
     left, top, right, bottom = font.getmask(text).getbbox()
-    print("ascent, descent:", ascent, descent)
-    print("width, baseline, offset_x, offset_y:", width, baseline, offset_x, offset_y)
-    print("left, top, right, bottom:", left, top, right, bottom)
+    #print("ascent, descent:", ascent, descent)
+    #print("width, baseline, offset_x, offset_y:", width, baseline, offset_x, offset_y)
+    #print("left, top, right, bottom:", left, top, right, bottom)
 
     # get a drawing context
     d = ImageDraw.Draw(out)
@@ -42,7 +44,7 @@ if __name__ == '__main__':
     #new_offset_y = -1 * (276-51)/2
     #new_offset_y = -1 * (100-50)/2
     
-    print("new_offset_y:", new_offset_y)
+    #print("new_offset_y:", new_offset_y)
     d.text((0, new_offset_y), text, font=font, fill=(0))
     
     out.save(filename)
