@@ -12,6 +12,13 @@ import math
 def generate(args):
     ff_tmp, out_path = args.input, args.output
 
+    if out_path is None:
+        if ".sfdir" in ff_tmp:
+            out_path = ff_tmp.replace(".sfdir",".ttf")
+    if out_path is None:
+        print("output path not able to genereate")
+        return
+
     print("Open sfdir:", ff_tmp)
     myfont=fontforge.open(ff_tmp)
     print("Save font:", out_path)
@@ -50,7 +57,7 @@ def cli():
 
     parser.add_argument("--output",
         help="inpoutputut font file",
-        required=True,
+        #required=True,
         type=str)
 
     # font config.
@@ -84,10 +91,8 @@ def cli():
         default="1",
         type=str)
 
-
     args = parser.parse_args()
     generate(args)
-
 
 if __name__ == "__main__":
     cli()
