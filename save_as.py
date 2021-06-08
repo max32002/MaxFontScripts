@@ -11,6 +11,15 @@ import argparse
 def save_as(args):
     ff_tmp, out_path = args.input, args.output
 
+    if out_path is None:
+        if ".ttf" in ff_tmp:
+            out_path = ff_tmp.replace(".ttf",".sfdir")
+        if ".otf" in ff_tmp:
+            out_path = ff_tmp.replace(".otf",".sfdir")
+    if out_path is None:
+        print("output path not able to genereate")
+        return
+
     # print info.
     print("Open font:", ff_tmp)
     merge_from = None
@@ -64,7 +73,7 @@ def cli():
 
     parser.add_argument("--output",
         help="output font file",
-        required=True,
+        #required=True,
         type=str)
 
     # font config.
