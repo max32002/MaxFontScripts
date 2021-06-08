@@ -34,7 +34,7 @@ def resize(filename, width):
 
     return ret
 
-def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True):
+def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True, make_sub_folder=False):
     print("Open font:", ff_tmp)
     print("Save dir:", out_path)
     print("Save format:", export_format)
@@ -80,7 +80,11 @@ def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True):
         #filename="U_%d.svg" % (unicode_int)
 
         # due to the file count too large.
-        profix_folder = str(unicode_int)[:1]
+        profix_folder = ""
+        if make_sub_folder:
+            # sub folder rule 1: by first car
+            profix_folder = str(unicode_int)[:1]
+        
         target_folder = os.path.join(out_path,profix_folder)
         if not exists(target_folder):
             mkdir(target_folder)
@@ -104,6 +108,7 @@ def export(ff_tmp, out_path, export_format, pixelsize, force_overwrite=True):
                     export_flag = False
 
         if export_flag:
+            #print("target_path: %s" % (target_path))
             if export_format in ['bmp','png']:
                 glyph.export(target_path,pixelsize=pixelsize,bitdepth=1)
             else:
@@ -153,9 +158,12 @@ def cli():
 
     # default is not overwrite, so run twice is okey.
     parser.add_argument("--overwrite",
-        help="force overwrite",
-        default="False",
-        type=str)
+        help="force overwrite exist image file",
+        action='store_true')
+
+    parser.add_argument("--makesubfolder",
+        help="force make sub folder by first char",
+        action='store_true')
 
     args = parser.parse_args()
 
