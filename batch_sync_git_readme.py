@@ -89,6 +89,7 @@ for item in ttf_list:
 		reuse_file = os.path.expanduser(reuse_file)
 
 	begin_string = "## 相關網頁"
+	#begin_string = "    * 可自由改作為其他字型 將字型檔案修改重製為其他字型檔案，改作後的字型檔案須同樣依 Open Font License 釋出。"
 	resume_string = "https://max-everyday.com/about/#donate"
 	cmd = "~/Documents/sh/update_block_from_file.py --first \"%sREADME.md\"" % (item.replace("\"","\\\""))
 	cmd += " --second \"%s\"" % (reuse_file.replace("\"","\\\""))
