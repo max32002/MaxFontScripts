@@ -34,6 +34,32 @@ def main():
         default=None,
         type=str)
 
+    parser.add_argument("--from_r",
+        help="from RED color",
+        default=0,
+        type=int)
+    parser.add_argument("--from_g",
+        help="from GREEN color",
+        default=0,
+        type=int)
+    parser.add_argument("--from_b",
+        help="from BLUE color",
+        default=0,
+        type=int)
+
+    parser.add_argument("--to_r",
+        help="to RED color",
+        default=255,
+        type=int)
+    parser.add_argument("--to_g",
+        help="to GREEN color",
+        default=0,
+        type=int)
+    parser.add_argument("--to_b",
+        help="to BLUE color",
+        default=0,
+        type=int)
+
     parser.add_argument("--resize_canvas_size",
         help="resize canvas to new size",
         default=None,
@@ -64,8 +90,9 @@ def main():
         img_rgb = Image.new("RGB", img_raw.size, (255, 255, 255))
         img_rgb.paste(img_raw)
         
-        original_value = (0,0,0)
-        target_value = (255,0,0)
+        original_value = (args.from_r,args.from_g,args.from_b)
+        target_value = (args.to_r,args.to_g,args.to_b)
+
         img_rgb = changeColor(img_rgb, original_value, target_value)
         
         if args.resize_canvas_size:
