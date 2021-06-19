@@ -78,9 +78,10 @@ def main():
     if not args.output is None:
         image_file_out = args.output
 
-    print("Open font:", image_file_in)
-    print("Save path:", image_file_out)
+    #print("Open font:", image_file_in)
+    #print("Save path:", image_file_out)
 
+    cnt = 0
     if not exists(image_file_in):
         print("image file not found:", args.input)
     else:
@@ -98,6 +99,9 @@ def main():
         if args.resize_canvas_size:
             img_rgb = img_rgb.resize( (args.resize_canvas_size, args.resize_canvas_size), Image.ANTIALIAS )
         img_rgb.save(image_file_out)
+        cnt += 1
+
+    #print("Convert %d images." % (cnt))
 
 
 if __name__ == '__main__':

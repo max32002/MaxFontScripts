@@ -43,17 +43,29 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern):
         if glyph.width <= 0:
             continue
 
-        filename="%s.bmp.svg" % (chr(unicode_int))
-        work_folder = "."
-        svg_filepath = os.path.join(work_folder,filename)
+        filename=filename_pattern % (chr(unicode_int))
+        svg_filepath = os.path.join(svg_path,filename)
 
-        export_flag = True
+        debug = False       # online
+        #debug = True
+        debug_char = "份"
+
+        if debug:
+            if chr(unicode_int) == debug_char:
+                print("match debug char ... start")
+                print("svg path:", svg_filepath)
 
         if exists(svg_filepath):
+            if debug:
+                print("found matched svg path: %s" % (svg_filepath) )
             glyph.clear()
             glyph.importOutlines(svg_filepath)
             import_counter += 1
             import_char_list += chr(unicode_int)
+
+        if debug:
+            if chr(unicode_int) == debug_char:
+                print("match debug char ... end")
 
         if idx % 1000 == 0:
             print("Processing (%d)export: %d" % (idx, import_counter))
@@ -84,7 +96,7 @@ def cli():
 
     parser.add_argument("--filename_pattern",
         help="svg filename pattern",
-        default="%s.bmp.svg",
+        default="%s.svg",
         type=str)
     
 
@@ -95,7 +107,14 @@ def cli():
     if not args.output is None:
         project_output = args.output
 
-    import_svg(args.input, project_output, args.svg_path, args.filename_pattern)
+    pass_precheck = True
+    
+    if not exists(args.svg_path):
+        pass_precheck = False
+        print("svg path not found: %s" % (args.svg_path))
+
+    if pass_precheck:
+        import_svg(args.input, project_output, args.svg_path, args.filename_pattern)
 
 if __name__ == "__main__":
     cli()
