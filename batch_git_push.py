@@ -69,6 +69,7 @@ ttf_list = [
 ,'~/Documents/git/swei-jay-sans/'
 ,'~/Documents/git/swei-jay-leg/'
 ,'~/Documents/git/swei-jay-serif/'
+,'~/Documents/git/kurewa-gothic/'
 ]
 
 # TODO:
