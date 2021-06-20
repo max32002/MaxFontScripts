@@ -9,11 +9,11 @@ from PIL import Image
 import argparse
 
 
-def changeColor(im, original_value, target_value):
+def changeColor(im, from_rgb_value, to_rgb_value):
     data = np.array(im)
 
-    r1, g1, b1 = original_value
-    r2, g2, b2 = target_value
+    r1, g1, b1 = from_rgb_value
+    r2, g2, b2 = to_rgb_value
 
     red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
     mask = (red == r1) & (green == g1) & (blue == b1)
@@ -70,10 +70,17 @@ def main():
         help="force overwrite exist image file",
         action='store_true')
 
+    # allow fuzzy mode.
+    parser.add_argument("--fuzziness",
+        help="select more colors",
+        default=None,
+        type=int)
+
     args = parser.parse_args()
 
     image_file_in = args.input
     image_file_out = image_file_in
+    fuzziness = args.fuzziness
     
     if not args.output is None:
         image_file_out = args.output
@@ -91,10 +98,47 @@ def main():
         img_rgb = Image.new("RGB", img_raw.size, (255, 255, 255))
         img_rgb.paste(img_raw)
         
-        original_value = (args.from_r,args.from_g,args.from_b)
-        target_value = (args.to_r,args.to_g,args.to_b)
+        from_rgb_value = (args.from_r,args.from_g,args.from_b)
+        to_rgb_value = (args.to_r,args.to_g,args.to_b)
 
-        img_rgb = changeColor(img_rgb, original_value, target_value)
+        if not fuzziness:
+            # only replace 1 color.
+            img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value)
+        else:
+            # fuzzy mode.
+            if fuzziness > 0:
+                #print("fuzziness: %d" % (fuzziness))
+                #print("from RGB color: %d,%d,%d" % (args.from_r,args.from_g,args.from_b))
+                #print("to RGB color: %d,%d,%d" % (args.to_r,args.to_g,args.to_b))
+                
+                for direction in range(-1,2,2):
+                    #print("direction: %d" % (direction))
+                    for increase_value in range(fuzziness):
+                        #print("increase_value: %d" % (increase_value))
+                        # PS: not support RGB mode, for GRAY mode now.
+                        target_r = args.from_r + (direction * (increase_value+1))
+                        if target_r <=0:
+                            target_r = 0
+                        if target_r >=255:
+                            target_r = 255
+
+                        target_g = args.from_g + (direction * (increase_value+1))
+                        if target_g <=0:
+                            target_g = 0
+                        if target_g >=255:
+                            target_g = 255
+
+                        target_b = args.from_b + (direction * (increase_value+1))
+                        if target_b <=0:
+                            target_b = 0
+                        if target_b >=255:
+                            target_b = 255
+
+                        #print("target_r: %d" % (target_r))
+                        #print("target_g: %d" % (target_g))
+                        #print("target_b: %d" % (target_b))
+                        from_rgb_value = (target_r, target_g, target_b)
+                        img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value)
         
         if args.resize_canvas_size:
             img_rgb = img_rgb.resize( (args.resize_canvas_size, args.resize_canvas_size), Image.ANTIALIAS )
