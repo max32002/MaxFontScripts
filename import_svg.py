@@ -6,7 +6,7 @@ from os import mkdir
 from os.path import exists
 import argparse
 
-def import_svg(ff_tmp, out_path, svg_path, filename_pattern):
+def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
     print("Open font:", ff_tmp)
     print("Save dir:", out_path)
     print("svg_path:", svg_path)
@@ -43,7 +43,13 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern):
         if glyph.width <= 0:
             continue
 
-        filename=filename_pattern % (chr(unicode_int))
+        # default use 'char'
+        filename_variable = chr(unicode_int)
+        if filename_source == 'unicode_hex':
+            filename_variable = str(hex(unicode_int))[2:]
+        if filename_source == 'unicode_int':
+            filename_variable = unicode_int
+        filename=filename_pattern % (filename_variable)
         svg_filepath = os.path.join(svg_path,filename)
 
         debug = False       # online
@@ -99,6 +105,13 @@ def cli():
         default="%s.svg",
         type=str)
     
+    parser.add_argument("--filename_source", type=str, choices=['char', 'unicode_hex', 'unicode_int'],
+        help='svg filename pattern source.\n'
+             'use char for character.\n'
+             'use unicode_hex for unicode hex .\n'
+             'use unicode_hex for unicode decimal.',
+        default="char",
+        )
 
     args = parser.parse_args()
 
@@ -114,7 +127,7 @@ def cli():
         print("svg path not found: %s" % (args.svg_path))
 
     if pass_precheck:
-        import_svg(args.input, project_output, args.svg_path, args.filename_pattern)
+        import_svg(args.input, project_output, args.svg_path, args.filename_pattern, args.filename_source)
 
 if __name__ == "__main__":
     cli()
