@@ -9,14 +9,20 @@ from PIL import Image
 import argparse
 
 
-def changeColor(im, from_rgb_value, to_rgb_value):
+def changeColor(im, from_rgb_value, to_rgb_value, mode="MatchAll"):
     data = np.array(im)
 
     r1, g1, b1 = from_rgb_value
     r2, g2, b2 = to_rgb_value
 
     red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
-    mask = (red == r1) & (green == g1) & (blue == b1)
+    
+    # default mode=="MatchAll":
+    mask=None
+    if mode=="MatchAll":
+        mask = (red == r1) & (green == g1) & (blue == b1)
+    if mode=="NotMatch":
+        mask = (red != r1) & (green != g1) & (blue != b1)
     data[:,:,:3][mask] = [r2, g2, b2]
     
     im = Image.fromarray(data)
@@ -76,6 +82,11 @@ def main():
         default=None,
         type=int)
 
+    # default is not overwrite, so run twice is okey.
+    parser.add_argument("--reverse",
+        help="not match all",
+        action='store_true')
+
     args = parser.parse_args()
 
     image_file_in = args.input
@@ -101,9 +112,13 @@ def main():
         from_rgb_value = (args.from_r,args.from_g,args.from_b)
         to_rgb_value = (args.to_r,args.to_g,args.to_b)
 
+        mode="MatchAll"
+        if args.reverse:
+            mode="NotMatch"
+
         if not fuzziness:
             # only replace 1 color.
-            img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value)
+            img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value, mode=mode)
         else:
             # fuzzy mode.
             if fuzziness > 0:
@@ -138,7 +153,7 @@ def main():
                         #print("target_g: %d" % (target_g))
                         #print("target_b: %d" % (target_b))
                         from_rgb_value = (target_r, target_g, target_b)
-                        img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value)
+                        img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value, mode=mode)
         
         if args.resize_canvas_size:
             img_rgb = img_rgb.resize( (args.resize_canvas_size, args.resize_canvas_size), Image.ANTIALIAS )
