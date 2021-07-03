@@ -9,7 +9,9 @@ import argparse
 def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
     print("Open font:", ff_tmp)
     print("Save dir:", out_path)
-    print("svg_path:", svg_path)
+    print("Svg path:", svg_path)
+    print("Filename pattern:", filename_pattern)
+    print("Filename source:", filename_source)
 
     if not exists(out_path):
         mkdir(out_path)
@@ -54,12 +56,13 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
 
         debug = False       # online
         #debug = True
-        debug_char = "份"
+        debug_char = "乩"
+        debug_char_int = ord(debug_char)
 
         if debug:
-            if chr(unicode_int) == debug_char:
+            if unicode_int == debug_char_int:
                 print("match debug char ... start")
-                print("svg path:", svg_filepath)
+                print("debug svg path:", svg_filepath)
 
         if exists(svg_filepath):
             if debug:
@@ -70,13 +73,13 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
             import_char_list += chr(unicode_int)
 
         if debug:
-            if chr(unicode_int) == debug_char:
+            if unicode_int == debug_char_int:
                 print("match debug char ... end")
 
         if idx % 1000 == 0:
             print("Processing (%d)export: %d" % (idx, import_counter))
 
-    print("Done, total import count:%d, text:%s" % (import_counter, import_char_list))
+    print("Done,\nImported count:%d \nImported text:%s\n" % (import_counter, import_char_list))
 
     if import_counter > 0:
         myfont.save(out_path)
