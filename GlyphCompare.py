@@ -697,18 +697,20 @@ def adjust_top_bottom(stroke_dict_1, stroke_dict_2, GLYPH_WIDTH, GLYPH_UNDERLINE
             transform_stroke(stroke_dict_2,new_transform_cmd)
             is_overlap, overlap_length, glyph_margin_1, glyph_margin_2 = check_top_bottom_overlap(stroke_dict_1, stroke_dict_2)
 
-def merge_stroke(stroke_dict_1, stroke_dict_2, component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE):
+def merge_stroke(stroke_dict_1, stroke_dict_2, component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE, add_extra_finetune_commands):
     intersection_dict = {}
 
     SHOW_DEBUG_MESSAGE = False
     #SHOW_DEBUG_MESSAGE = True   # debug.
 
 
-    if component_rule=='左右':
-        adjust_left_right(stroke_dict_1, stroke_dict_2, GLYPH_WIDTH)
+    if add_extra_finetune_commands:
+        # finetune
+        if component_rule=='左右':
+            adjust_left_right(stroke_dict_1, stroke_dict_2, GLYPH_WIDTH)
 
-    if component_rule=='上下':
-        adjust_top_bottom(stroke_dict_1, stroke_dict_2, GLYPH_WIDTH, GLYPH_UNDERLINE)
+        if component_rule=='上下':
+            adjust_top_bottom(stroke_dict_1, stroke_dict_2, GLYPH_WIDTH, GLYPH_UNDERLINE)
 
     if 1 in stroke_dict_1:
        for key_1 in stroke_dict_1.keys():

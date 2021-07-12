@@ -428,7 +428,7 @@ def merge_component(target_ff, char, char_info_array, combine_list, file_index, 
     stroke_dict_2, unicode_int_2 = GlyphCompare.get_stroke_dict(combine_list[1][0], UNICODE_FIELD, char_commands_2)
 
     #print("component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE:", component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE)
-    is_found_component, new_stroke_dict = GlyphCompare.merge_stroke(stroke_dict_1, stroke_dict_2, component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE)
+    is_found_component, new_stroke_dict = GlyphCompare.merge_stroke(stroke_dict_1, stroke_dict_2, component_rule, GLYPH_WIDTH, GLYPH_UNDERLINE, add_extra_finetune_commands)
 
     if SHOW_DEBUG_MESSAGE:
         print("is_found_component:", is_found_component)
