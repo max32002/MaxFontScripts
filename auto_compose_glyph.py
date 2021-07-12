@@ -23,7 +23,40 @@ def load_config_files(import_file, skip_list_file, thin_component_filepath, heav
     target_chars_list = []
     if exists(import_file):
         f = open(import_file,"r")
-        target_chars_list = f.readlines()
+        #solution #1, read all.
+        #target_chars_list = f.readlines()
+
+        #solution #2, read each line.
+        file_raw_list = f.readlines()
+        for line in file_raw_list:
+            line = line.strip()
+
+            if len(line) == 0:
+                continue
+
+            # default use compose command
+            content_compose_commnad = True
+
+            if content_compose_commnad:
+                # line to long.
+                if len(line) > 120:
+                    content_compose_commnad = False
+                # line too short.
+                if len(line) == 1:
+                    content_compose_commnad = False
+
+            if content_compose_commnad:
+                if not ' ' in line:
+                    content_compose_commnad = False
+
+            if content_compose_commnad:
+                # compose command mode.
+                target_chars_list.append(line)
+            else:
+                # raw data mode.
+                for char in line:
+                    if len(char) > 0:
+                        target_chars_list.append(char)
         f.close()
     #target_chars_list = target_chars_raw.split('\n')
 
@@ -264,9 +297,8 @@ def get_supported_position_set(dict_data, ff_unicode_set, all_position):
     #print("supported_position_set:", supported_position_set)
     return supported_position_set, supported_position_dict
 
-def travel_preprocess(ff_unicode_set):
+def travel_preprocess(ff_unicode_set, dictionary_filepath):
     # hard code new, maybe change it in future.
-    dictionary_filepath = '/Users/chunyuyao/Documents/git/chinese_dictionary/Dictionary_lite.json'
     dict_data = open_db(dictionary_filepath)
 
     # cache the resule from json file.
@@ -305,7 +337,7 @@ def get_skip_related_glyph_count(related_glyph_length):
 
     return skip_to_index
 
-def merge_component(target_ff, char, char_info_array, combine_list, file_index, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, output_file):
+def merge_component(target_ff, char, char_info_array, combine_list, file_index, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, output_file, add_extra_finetune_commands):
     component_rule = combine_list[0][1] + combine_list[1][1]
     #print("match supported list:", char)
     #print("combin glyph list:", combine_list)
@@ -330,7 +362,10 @@ def merge_component(target_ff, char, char_info_array, combine_list, file_index, 
     if combine_list[1][1] != combine_list[1][0]:
         is_component_rule_changed = True
 
-    if is_component_rule_changed:
+    if is_component_rule_changed and add_extra_finetune_commands:
+        #print("component_rule_changed, apply extra commands:")
+        #print("char_commands_2 before:", char_commands_2)
+
         redical = combine_list[0][3]
 
         messsage = "component_rule:%s" % (component_rule)
@@ -339,9 +374,12 @@ def merge_component(target_ff, char, char_info_array, combine_list, file_index, 
         if SHOW_DEBUG_MESSAGE:
             print(messsage)
 
+        is_apply_extra_command = False
+
         if component_rule=='左下右上':
             cmd="SCALE::XY:0.75"
             char_commands_2.append(cmd)
+            is_apply_extra_command = True
 
             # default
             cmd="MOVE::X:" + str(int(GLYPH_WIDTH * 0.09))
@@ -362,6 +400,7 @@ def merge_component(target_ff, char, char_info_array, combine_list, file_index, 
         if component_rule=='左上右下':
             cmd="SCALE::XY:0.8"
             char_commands_2.append(cmd)
+            is_apply_extra_command = True
             
             cmd="MOVE::X:" + str(int(GLYPH_WIDTH * 0.09))
             char_commands_2.append(cmd)
@@ -380,6 +419,10 @@ def merge_component(target_ff, char, char_info_array, combine_list, file_index, 
 
                 cmd="MOVE::Y:" + str(-1 * int(GLYPH_WIDTH * 0.20))
             char_commands_2.append(cmd)
+
+        if is_apply_extra_command:
+            print("char_commands_2 after:", char_commands_2)
+            pass
 
     stroke_dict_1, unicode_int_1 = GlyphCompare.get_stroke_dict(combine_list[0][0], UNICODE_FIELD, char_commands_1)
     stroke_dict_2, unicode_int_2 = GlyphCompare.get_stroke_dict(combine_list[1][0], UNICODE_FIELD, char_commands_2)
@@ -500,7 +543,7 @@ def get_related_glyph_list(supported_position_key,supported_position_set,support
                 idx_offset += 1
     return related_glyph_list
 
-def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath):
+def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath, add_extra_finetune_commands):
     output_file = open(log_filepath, 'w')
 
     char_idx=-1
@@ -525,14 +568,19 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
 
         char_idx += 1
 
-        output_file.write(('=' * 40) + '\n')
         if ord(char) in ff_unicode_set:
-            messsage = "idx:%d char:%s is ready." % (char_idx, char)
-            output_file.write(messsage + "\n")
+            #output_is_ready_message = True      # for debug.
+            output_is_ready_message = False     # online
 
-            if SHOW_DEBUG_MESSAGE:
-                print(messsage)
+            if output_is_ready_message:
+                output_file.write(('=' * 40) + '\n')
+                messsage = "idx:%d char:%s is ready." % (char_idx, char)
+                output_file.write(messsage + "\n")
+
+                if SHOW_DEBUG_MESSAGE:
+                    print(messsage)
         else:
+            output_file.write(('=' * 40) + '\n')
             messsage = "idx:%d char:%s (U+%s) is lost." % (char_idx, char,str(hex(ord(char)))[2:].upper())
             output_file.write(messsage + "\n")
             if SHOW_DEBUG_MESSAGE:
@@ -1016,7 +1064,7 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
 
             if is_match_supported_set:
                 if len(combine_list) >=2:
-                    merge_result, glyph_filepath = merge_component(target_ff, char, char_info_array, combine_list, file_index, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, output_file)
+                    merge_result, glyph_filepath = merge_component(target_ff, char, char_info_array, combine_list, file_index, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, output_file, add_extra_finetune_commands)
                     if merge_result:
                         file_index+=1
                 pass
@@ -1065,6 +1113,15 @@ def main(args):
             source_font_props = join(working_ff,"font.props")
             shutil.copy(source_font_props,target_font_props)
 
+    dictionary_filepath = args.dictionary_file 
+    if pass_input_check:
+        if not exists(dictionary_filepath):
+            pass_input_check = False
+            error_message = "dictionary file not exist, please download it from github."
+        else:
+            print("file exist:", dictionary_filepath)
+            pass
+
     # Optional input file.
     thin_component_filepath = args.thin_component
     heavy_component_filepath = args.heavy_component
@@ -1080,24 +1137,25 @@ def main(args):
     UNICODE_FIELD = 1       # default
     UNICODE_FIELD = 2       # for Noto Sans
 
-    # get working ff infos.
-    ff_unicode_set, ff_dict, GLYPH_WIDTH, GLYPH_UNDERLINE = get_font_info(working_ff, UNICODE_FIELD)
-    # get supported_position_set
-    dict_data, all_position, supported_position_set, supported_position_dict = travel_preprocess(ff_unicode_set)
-    # load config files.
-    target_chars_list, skip_list, THIN_COMPONENT,HEAVY_COMPONENT,skip_average_mode_redical_list = load_config_files(import_file, skip_list_file, thin_component_filepath, heavy_component_filepath, skip_average_redical_filepath)
-
-    SHOW_DEBUG_MESSAGE = False
-    if args.debug == "True":
-        SHOW_DEBUG_MESSAGE = True   # debug.
-
-    print("compare with lost target chars...")
-    print("import chars list file:", import_file)
-    print("import chars length:", len(target_chars_list))
-    print("skip chars length:", len(skip_list))
-    
+    add_extra_finetune_commands = args.add_extra_finetune_commands
     if pass_input_check:
-        travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath)
+        # get working ff infos.
+        ff_unicode_set, ff_dict, GLYPH_WIDTH, GLYPH_UNDERLINE = get_font_info(working_ff, UNICODE_FIELD)
+        # get supported_position_set
+        dict_data, all_position, supported_position_set, supported_position_dict = travel_preprocess(ff_unicode_set, dictionary_filepath)
+        # load config files.
+        target_chars_list, skip_list, THIN_COMPONENT,HEAVY_COMPONENT,skip_average_mode_redical_list = load_config_files(import_file, skip_list_file, thin_component_filepath, heavy_component_filepath, skip_average_redical_filepath)
+
+        SHOW_DEBUG_MESSAGE = False
+        if args.debug == "True":
+            SHOW_DEBUG_MESSAGE = True   # debug.
+
+        print("compare with lost target chars...")
+        print("import chars list file:", import_file)
+        print("import chars length:", len(target_chars_list))
+        print("skip chars length:", len(skip_list))
+    
+        travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath, add_extra_finetune_commands)
 
         if args.preview == "True":
             preview(target_ff)
@@ -1168,18 +1226,27 @@ def cli():
 
     parser.add_argument("--debug",
         help="show debug info",
-        default='False',
-        type=str)
+        action='store_true')
 
     parser.add_argument("--log_file",
         help="travel log filename",
         default='compose.log',
         type=str)
 
+    parser.add_argument("--dictionary_file",
+        help="dictionary json file path",
+        default='Dictionary_lite.json',
+        type=str)
+
     parser.add_argument("--shake",
         help="shake redical for handwriting font",
         default='True',
         type=str)
+
+    parser.add_argument("--add_extra_finetune_commands",
+        help="add extra commands for some second glyph",
+        action='store_true')
+
 
     args = parser.parse_args()
     main(args)
