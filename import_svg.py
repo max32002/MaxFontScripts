@@ -42,6 +42,7 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
         if unicode_int <= 0:
             continue
 
+        previous_width = glyph.width
         if glyph.width <= 0:
             continue
 
@@ -69,6 +70,7 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
                 print("found matched svg path: %s" % (svg_filepath) )
             glyph.clear()
             glyph.importOutlines(svg_filepath)
+            glyph.width = previous_width
             import_counter += 1
             import_char_list += chr(unicode_int)
 
