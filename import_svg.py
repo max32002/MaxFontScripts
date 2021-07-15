@@ -6,12 +6,38 @@ from os import mkdir
 from os.path import exists
 import argparse
 
-def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
+def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source, scale, simplify):
     print("Open font:", ff_tmp)
     print("Save dir:", out_path)
     print("Svg path:", svg_path)
     print("Filename pattern:", filename_pattern)
     print("Filename source:", filename_source)
+
+    '''
+scale (boolean, default=True)
+Scale imported images and SVGs to ascender height
+
+simplify (boolean, default=True)
+Run simplify on the output of stroked paths
+
+accuracy (float, default=0.25)
+The minimum accuracy (in em-units) of stroked paths.
+
+default_joinlimit (float, default=-1)
+Override the format’s default miterlimit for stroked paths, which is 10.0 for PostScript and 4.0 for SVG. (Value -1 means “inherit” those defaults.)
+
+handle_eraser (boolean, default=False)
+Certain programs use pens with white ink as erasers. When this flag is set FontForge will attempt to simulate that.
+
+correctdir (boolean, default=False)
+Run “Correct direction” on (some) PostScript paths
+
+usesystem (boolean, default=False)
+Ignore the above keyword settings and use the values set by the user in the Import options dialog.
+
+asksystem (boolean, default=False)
+If the UI is present show the Import options dialog to the user and use the chosen values (does nothing otherwise).
+    '''
 
     if not exists(out_path):
         mkdir(out_path)
@@ -69,7 +95,7 @@ def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source):
             if debug:
                 print("found matched svg path: %s" % (svg_filepath) )
             glyph.clear()
-            glyph.importOutlines(svg_filepath)
+            glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
             glyph.width = previous_width
             import_counter += 1
             import_char_list += chr(unicode_int)
@@ -118,12 +144,30 @@ def cli():
         default="char",
         )
 
+    parser.add_argument('--disable_scale', 
+        help='disable to scale imported images and SVGs to ascender height',
+        action='store_true'
+        )
+    parser.add_argument('--disable_simplify', 
+        help='disable to simplify on the output of stroked paths',
+        action='store_true'
+        )
+
     args = parser.parse_args()
 
     project_output = args.input
     
     if not args.output is None:
         project_output = args.output
+
+    scale = True
+    if args.disable_scale:
+        scale = False
+
+    simplify = True
+    if args.disable_simplify:
+        simplify = False
+
 
     pass_precheck = True
     
@@ -132,7 +176,7 @@ def cli():
         print("svg path not found: %s" % (args.svg_path))
 
     if pass_precheck:
-        import_svg(args.input, project_output, args.svg_path, args.filename_pattern, args.filename_source)
+        import_svg(args.input, project_output, args.svg_path, args.filename_pattern, args.filename_source, scale, simplify)
 
 if __name__ == "__main__":
     cli()
