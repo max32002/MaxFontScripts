@@ -9,7 +9,7 @@ import numpy as np
 import cv2
 import argparse
 
-def blur(image_file_in, image_file_out):
+def blur(image_file_in, image_file_out, kernal_width, kernal_height):
     # PIL
     #img_raw = Image.open(image_file_in)
 
@@ -37,7 +37,7 @@ def blur(image_file_in, image_file_out):
 
     # blur...
     #img_rgb = cv2.blur(img_rgb, (5, 5))
-    img_rgb = cv2.blur(img_rgb, (10, 10))
+    img_rgb = cv2.blur(img_rgb, (kernal_width, kernal_height))
 
     img_rgb = cv2.fastNlMeansDenoisingColored(img_rgb,None,10,10,7,21)
     #img_rgb = cv2.GaussianBlur(img_rgb, (5, 5), 0)
@@ -63,6 +63,17 @@ def main():
         default=None,
         type=str)
 
+    parser.add_argument("--kernel_width",
+        help="kernel width size",
+        default=5,
+        type=int)
+
+    parser.add_argument("--kernel_height",
+        help="kernel height size",
+        default=5,
+        type=int)
+
+
     args = parser.parse_args()
 
     image_file_in = args.input
@@ -77,7 +88,7 @@ def main():
     if not exists(image_file_in):
         print("image file not found:", args.input)
     else:
-        blur(image_file_in, image_file_out)
+        blur(image_file_in, image_file_out, args.kernal_width, args.kernal_height)
 
 if __name__ == '__main__':
     main()
