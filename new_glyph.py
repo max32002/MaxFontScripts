@@ -3,6 +3,7 @@
 
 from os import listdir, remove, rename
 from os.path import join, isdir, isfile
+import argparse
 
 def new_glyph_file(output_folder, unicode_int, glyph_width, overwrite=False):
     unicode_hex = str(hex(unicode_int))[2:]
@@ -36,31 +37,45 @@ EndChar''' % (unicode_hex.upper(), unicode_int, unicode_int, glyph_width)
         output_file.close()
 
 
+def main():
+    parser = argparse.ArgumentParser(description='anti aliasing')
+
+    parser.add_argument("--output",
+        help="output font folder",
+        default=".",
+        type=str)
+
+    parser.add_argument("--string",
+        help="input glyph chars list",
+        required=True,
+        type=str)
+
+    parser.add_argument("--width",
+        help="glyph width size",
+        default=1024,
+        type=int)
+
+    parser.add_argument('--overwrite', 
+        action='store_true'
+        )
+
+    args = parser.parse_args()
+
+    output_folder = args.output
+    chars = args.string
+    glyph_width_int = args.width
+    force_overwrite = args.overwrite
+
+    #print("Open font:", image_file_in)
+    #print("Save path:", image_file_out)
+
+    if len(chars) > 0:
+        for char in chars:
+            unicode_int = -1
+            if len(char) > 0:
+                unicode_int = ord(char)
+            new_glyph_file(output_folder, unicode_int, glyph_width_int, overwrite=force_overwrite)
+
+
 if __name__ == '__main__':
-    #prefix_string = "Baku"
-
-    import sys
-    argument_count = 4
-    if len(sys.argv)==argument_count:
-        output_folder = sys.argv[1]
-        chars = sys.argv[2]
-        glyph_width = sys.argv[3]
-        force_overwrite = False
-        
-        if len(chars) > 0:
-            for char in chars:
-                unicode_int = -1
-                glyph_width_int = 1024
-                
-                if len(char) > 0:
-                    unicode_int = ord(char)
-                if len(glyph_width) > 0:
-                    glyph_width_int = int(glyph_width)
-                
-                
-                new_glyph_file(output_folder, unicode_int, glyph_width_int, overwrite=force_overwrite)
-    else:
-        print("Argument must be: %d" % (argument_count -1))
-        print("Ex:%s output_folder chars glyph_width" % (sys.argv[0]))
-
-
+    main()
