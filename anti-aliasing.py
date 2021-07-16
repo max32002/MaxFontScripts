@@ -63,12 +63,12 @@ def main():
         default=None,
         type=str)
 
-    parser.add_argument("--kernel_width",
+    parser.add_argument("--width",
         help="kernel width size",
         default=5,
         type=int)
 
-    parser.add_argument("--kernel_height",
+    parser.add_argument("--height",
         help="kernel height size",
         default=5,
         type=int)
@@ -88,7 +88,7 @@ def main():
     if not exists(image_file_in):
         print("image file not found:", args.input)
     else:
-        blur(image_file_in, image_file_out, args.kernal_width, args.kernal_height)
+        blur(image_file_in, image_file_out, args.width, args.height)
 
 if __name__ == '__main__':
     main()
