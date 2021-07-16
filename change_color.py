@@ -126,6 +126,7 @@ def main():
                 #print("from RGB color: %d,%d,%d" % (args.from_r,args.from_g,args.from_b))
                 #print("to RGB color: %d,%d,%d" % (args.to_r,args.to_g,args.to_b))
                 
+                travel_log = []
                 for direction in range(-1,2,2):
                     #print("direction: %d" % (direction))
                     for increase_value in range(fuzziness):
@@ -153,7 +154,13 @@ def main():
                         #print("target_g: %d" % (target_g))
                         #print("target_b: %d" % (target_b))
                         from_rgb_value = (target_r, target_g, target_b)
-                        img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value, mode=mode)
+
+                        if not from_rgb_value in travel_log:
+                            img_rgb = changeColor(img_rgb, from_rgb_value, to_rgb_value, mode=mode)
+                            travel_log.append(from_rgb_value)
+                        else:
+                            #print("skip this ralace:", from_rgb_value)
+                            pass
         
         if args.resize_canvas_size:
             img_rgb = img_rgb.resize( (args.resize_canvas_size, args.resize_canvas_size), Image.ANTIALIAS )
