@@ -147,6 +147,10 @@ def cli():
         default='',
         type=str)
 
+    # --range AC00,D7AF
+    # AC00 — D7AF   諺文音節 (Hangul Syllables)
+    # Hangul音節是一個Unicode塊，其中包含用於現代韓語的預先編寫的Hangul音節塊。音節可以通過算法直接映射到韓文字母Unicode塊中的兩個或三個字符的序列： U + 1100–U + 1112之一：19個現代韓文字母領先的輔音字母； U + 1161–U + 1175之一：21種現代韓文元音字母；
+
     # CJK Radicals Supplement, U+2E80 - U+2EFF
     # 中日韓統一表意文字擴充區A, 3400 – U+4DBF
     # CJK Unified Ideographs, 4E00 - U+9FFF
