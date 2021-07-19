@@ -66,9 +66,9 @@ def cli():
         default=0,
         type=int)
 
-    parser.add_argument("--char",
-        help="draw char",
-        default="",
+    parser.add_argument("--string",
+        help="draw chars",
+        default=None,
         required=True,
         type=str)
 
@@ -95,16 +95,23 @@ def cli():
     is_pass_check = True 
     error_message = ""
 
-    char = args.char
+    chars = args.string
 
-    if len(char) < 1:
+    if len(chars) < 1:
         is_pass_check = False
         error_message = "Char is required"
 
+    cnt = 0
     if is_pass_check:
-        export(args.font, args.char_size, args.canvas_size, args.x_offset, args.y_offset, char, args.output, args.filename_pattern, args.filename_source )
+        print("Start to draw chars...")
+        for char in chars:
+            cnt += 1
+            export(args.font, args.char_size, args.canvas_size, args.x_offset, args.y_offset, char, args.output, args.filename_pattern, args.filename_source)
     else:
         print("Error: %s" % (error_message))
+
+    if cnt > 0:
+        print("Draw char count: %d" % (cnt))
 
 if __name__ == "__main__":
     cli()
