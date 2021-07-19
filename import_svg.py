@@ -107,7 +107,10 @@ If the UI is present show the Import options dialog to the user and use the chos
         if idx % 1000 == 0:
             print("Processing (%d)export: %d" % (idx, import_counter))
 
-    print("Done,\nImported count:%d \nImported text:%s\n" % (import_counter, import_char_list))
+    formated_imported_text = import_char_list
+    if len(formated_imported_text) > 300:
+        formated_imported_text = formated_imported_text[:40] + "..." + formated_imported_text[-40:]
+    print("Done,\nImported count:%d \nImported text:%s\n" % (import_counter, formated_imported_text))
 
     if import_counter > 0:
         myfont.save(out_path)
