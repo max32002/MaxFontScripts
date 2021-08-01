@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 
-from os import listdir, remove, rename
+from os import remove, rename
 from os.path import join, exists, splitext
 
 import argparse
