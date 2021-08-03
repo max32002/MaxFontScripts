@@ -167,7 +167,7 @@ def cli():
 
     args = parser.parse_args()
 
-    export(args.input, args.output, args.format, args.pixelsize, force_overwrite=args.overwrite)
+    export(args.input, args.output, args.format, args.pixelsize, force_overwrite=args.overwrite, make_sub_folder=args.makesubfolder)
 
 if __name__ == "__main__":
     cli()
