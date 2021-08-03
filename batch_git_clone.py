@@ -77,5 +77,5 @@ ttf_list = [
 for item in ttf_list:
 	item = item.replace('~/Documents/git/','')
 	item = item.replace('/','')
-	cmd = "git clone https://github.com/max32002/%s" % (item)
+	cmd = "git clone git@github.com:max32002/%s" % (item)
 	print(cmd)
