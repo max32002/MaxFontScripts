@@ -474,7 +474,7 @@ def pair_related_char(working_ff, target_ff, shake_redical, ff_dict, dict_data, 
             related_char,strokes_total = related_glyph_list[related_idx]
             filename_1 = ff_dict[ord(related_char)]
             
-            messsage = "related_char %s, source filename:%s" % (related_char,filename_1)
+            messsage = "related_char: %s (%s)" % (related_char,filename_1)
             output_file.write(messsage + "\n")
             if SHOW_DEBUG_MESSAGE:
                 print(messsage)
@@ -546,6 +546,8 @@ def get_related_glyph_list(supported_position_key,supported_position_set,support
 def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, skip_list, THIN_COMPONENT, HEAVY_COMPONENT, skip_average_mode_redical_list, ff_unicode_set, ff_dict, all_position, supported_position_set, supported_position_dict, shake_redical, UNICODE_FIELD, GLYPH_WIDTH, GLYPH_UNDERLINE, SHOW_DEBUG_MESSAGE, log_filepath, add_extra_finetune_commands):
     output_file = open(log_filepath, 'w')
 
+    total_lost_char_list = ""
+
     char_idx=-1
     file_index = 1
     for char_info in target_chars_list:
@@ -580,6 +582,9 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
                 if SHOW_DEBUG_MESSAGE:
                     print(messsage)
         else:
+            # queue the lost chars.
+            total_lost_char_list += char
+
             output_file.write(('=' * 40) + '\n')
             messsage = "idx:%d char:%s (U+%s) is lost." % (char_idx, char,str(hex(ord(char)))[2:].upper())
             output_file.write(messsage + "\n")
@@ -1028,15 +1033,19 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
                             related_glyph_length = 1
 
                         if not is_component_is_resource:
-                            messsage = "fail at pos_key:%s, component:%s" % (pos_key,pos_data)
+                            messsage = "fail at pos_key: %s, component: %s" % (pos_key,pos_data)
                             output_file.write(messsage + "\n")
                             if SHOW_DEBUG_MESSAGE:
                                 print(messsage)
                             is_match_supported_set = False
                         else:
                             # able to auto compose:
-
-                            messsage = "component:%s source char: %s" % (pos_data, str(related_glyph_list))
+                            
+                            total_related_char = ""
+                            if related_glyph_length > 0:
+                                for related_char,strokes_total in related_glyph_list:
+                                    total_related_char += related_char
+                            messsage = "component: %s \n+--chars length: %d \n+--source chars: %s \n+--source chars info: %s" % (pos_data, related_glyph_length, total_related_char, str(related_glyph_list))
                             output_file.write(messsage + "\n")
                             if SHOW_DEBUG_MESSAGE:
                                 print(messsage)
@@ -1050,7 +1059,7 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
                                     # try use original component.
                                     if ord(pos_data) in ff_unicode_set:
                                         if SHOW_DEBUG_MESSAGE:
-                                            print('召換本尊出場:%s' % (pos_data))
+                                            print('召換本尊出場: %s' % (pos_data))
                                         use_orginal_glyph_instead_of_component = True
                                         related_glyph_list = [(pos_data,1)]
                                         related_glyph_length = 1
@@ -1072,6 +1081,11 @@ def travel_glyph(target_ff, working_ff, tmp_ff, dict_data, target_chars_list, sk
                 if SHOW_DEBUG_MESSAGE:
                     print("not able to auto compose:", char)
                 pass
+
+    if len(total_lost_char_list) > 0:
+        output_file.write(('=' * 40) + '\n')
+        messsage = "Total lost char: %s" % (total_lost_char_list)
+        output_file.write(messsage + "\n")
 
     output_file.close()
 
