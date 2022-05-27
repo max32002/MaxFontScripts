@@ -7,7 +7,7 @@ from os.path import join, exists, normpath, basename, splitext
 # to copy file.
 import shutil
 
-def update_width_from_file(file_path, unicode_field, target_width, accurate_percent):
+def update_width_from_file(file_path, unicode_field, target_width_int_min, target_width_int_max, new_width, is_read_only):
     output_filepath = file_path + ".tmp"
     input_file = open(file_path, 'r')
     output_file = open(output_filepath, 'w')
@@ -18,7 +18,7 @@ def update_width_from_file(file_path, unicode_field, target_width, accurate_perc
     left_part_Width = 'Width: '
     left_part_Width_length = len(left_part_Width)
 
-    is_need_to_update = False
+    is_found_target = False
     mycode = 0
     
     x_line = input_file.readline()
@@ -40,10 +40,10 @@ def update_width_from_file(file_path, unicode_field, target_width, accurate_perc
             if right_part != target_width:
                 value_in_file = int(float(right_part))
 
-                if value_in_file >= target_width_int * (1 - accurate_percent) and value_in_file <= target_width_int * (1 + accurate_percent):
+                if value_in_file >= target_width_int_min and value_in_file <= target_width_int_max:
                     if mycode > 0:
                         print("%s: Width:%s, file:%s" %(chr(mycode), right_part, file_path))
-                        is_need_to_update = True
+                        is_found_target = True
                         new_line = "%s%s\n" % (left_part_Width,target_width)
 
         output_file.write(new_line)
@@ -53,11 +53,12 @@ def update_width_from_file(file_path, unicode_field, target_width, accurate_perc
     output_file.close()
 
     
-    #is_need_to_update = False # debug purpose
+    # for debug purpose
+    if is_read_only:
+        is_found_target = False 
 
-    if is_need_to_update:
-        
-        is_copy_file_to_folder = True   # check out the files by FontForge.
+    if is_found_target:
+        is_copy_file_to_folder = True   # copy out the files by FontForge.
         is_copy_file_to_folder = False  # direct modify.
 
         if not is_copy_file_to_folder:
@@ -78,9 +79,9 @@ def update_width_from_file(file_path, unicode_field, target_width, accurate_perc
         remove(output_filepath)
 
 
-    return is_need_to_update
+    return is_found_target
 
-def scan_folder(ff_folder, unicode_field, target_width, accurate_percent):
+def scan_folder(ff_folder, unicode_field, target_width_int_min, target_width_int_max, new_width, is_read_only):
     files = listdir(ff_folder)
     match_count = 0
     file_count = 0
@@ -106,7 +107,7 @@ def scan_folder(ff_folder, unicode_field, target_width, accurate_percent):
                 
             target_path = join(ff_folder,f)
 
-            update_resulte = update_width_from_file(target_path, unicode_field, target_width, accurate_percent)
+            update_resulte = update_width_from_file(target_path, unicode_field, target_width_int_min, target_width_int_max, new_width, is_read_only)
 
             
             if update_resulte:
@@ -126,6 +127,13 @@ if __name__ == '__main__':
     accurate_percent = 0.13     # tight compare
     accurate_percent = 0.05     # tight compare
     accurate_percent = 0.03     # tight compare
+    accurate_percent = 0.01     # tight compare
+    #accurate_percent = 0        # must match
+
+    is_read_only = True         # for debug
+    is_read_only = False        # online
+
+    new_width = 1000
 
     import sys
     argument_count = 3
@@ -137,12 +145,21 @@ if __name__ == '__main__':
         target_width = target_width.strip()
         
         if len(source_ff) > 0 and len(target_width) > 0:
+
+            target_width_int = int(target_width)
+            target_width_int_min = target_width_int - (target_width_int * accurate_percent)
+            target_width_int_max = target_width_int + (target_width_int * accurate_percent)
+            print("target_width:", target_width)
+            print("target_width_int_min:", target_width_int_min)
+            print("target_width_int_max:", target_width_int_max)
+            print("replace as new width:", new_width)
+
             if not exists(source_ff):
                 if not ".sfdir" in source_ff:
                     source_ff += ".sfdir"
     
             if exists(source_ff):
-                scan_folder(source_ff, unicode_field, target_width, accurate_percent)
+                scan_folder(source_ff, unicode_field, target_width_int_min, target_width_int_max, new_width, is_read_only)
             
     else:
         print("Argument must be: %d" % (argument_count -1))
