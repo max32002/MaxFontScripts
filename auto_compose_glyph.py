@@ -133,14 +133,15 @@ def get_font_info(working_ff, UNICODE_FIELD):
 
     # default value
     GLYPH_WIDTH, GLYPH_UNDERLINE = load_font_props(working_ff)
-    print("GLYPH_WIDTH:", GLYPH_WIDTH)
-    print("GLYPH_UNDERLINE:", GLYPH_UNDERLINE)
+    print("Font GLYPH_WIDTH:", GLYPH_WIDTH)
+    print("Font GLYPH_UNDERLINE:", GLYPH_UNDERLINE)
 
     return ff_unicode_set, ff_dict, GLYPH_WIDTH, GLYPH_UNDERLINE
 
 def preview(target_ff):
     if not "/" in target_ff:
         target_ff = abspath(target_ff)
+    # for Mac OS.
     cmd = "/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge " + target_ff
     process = subprocess.Popen(cmd, shell=True)
 
