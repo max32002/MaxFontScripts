@@ -72,10 +72,8 @@ def load_config_files(import_file, skip_list_file, thin_component_filepath, heav
         f.close()
 
     DEFAULT_THIN_COMPONENT = "大丿山古衤木片土爿干火扌羊丰忄于十目卜文申礻止日阝王力女亻牜彡冫⺪氵月自白巾弓言𧾷犭禾"
-    # special case.
-    DEFAULT_THIN_COMPONENT += "亢㚇戉番負賛壹害"
     
-    DEFAULT_HEAVY_COMPONENT = "倉票畐丹念祭賴卵夾分翟芻瓜少宛肖羽兆卑八心"
+    DEFAULT_HEAVY_COMPONENT = "倉票畐丹念祭賴卵夾分翟芻瓜少宛肖羽兆卑八心我"
 
     DEFAULT_SKIP_AVERAGE_MODE_REDICAL = '金糸魚'
 
@@ -108,7 +106,6 @@ def load_config_files(import_file, skip_list_file, thin_component_filepath, heav
     if len(HEAVY_COMPONENT)==0:
         HEAVY_COMPONENT = DEFAULT_HEAVY_COMPONENT
 
-    
     if exists(skip_average_redical_filepath):
         f = open(skip_average_redical_filepath,"r")
         file_raw_list = f.readlines()
@@ -121,8 +118,6 @@ def load_config_files(import_file, skip_list_file, thin_component_filepath, heav
 
     if len(skip_average_mode_redical_list)==0:
         skip_average_mode_redical_list = DEFAULT_SKIP_AVERAGE_MODE_REDICAL
-
-
 
     return target_chars_list, skip_list, THIN_COMPONENT,HEAVY_COMPONENT,skip_average_mode_redical_list
 
@@ -460,7 +455,7 @@ def pair_related_char(working_ff, target_ff, shake_redical, ff_dict, dict_data, 
 
     if is_match_pre_require:
 
-        # 避免元件都長一樣。
+        # 避免元件都長一樣, shake=True。
         skip_to_index = -1
         if shake_redical == "True":
             skip_to_index = get_skip_related_glyph_count(related_glyph_length)

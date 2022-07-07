@@ -904,7 +904,7 @@ def get_component(parse_char, dict_data, stroke_dict_1, glyph_margin, component,
                 MAP_THRESHOLD = int(GLYPH_WIDTH * 0.5)
                 
                 if use_thin_stroke_rule:
-                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.38)
+                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.385)
                 if use_complex_stroke_rule:
                     MAP_THRESHOLD = int(GLYPH_WIDTH * 0.66)
                 
@@ -971,15 +971,17 @@ def get_component(parse_char, dict_data, stroke_dict_1, glyph_margin, component,
                         is_skip_average_mode = True
 
                 spline_fail_code = 200
-                MAP_THRESHOLD = int(GLYPH_WIDTH * 0.35)
+                MAP_THRESHOLD = int(GLYPH_WIDTH * 0.32)
 
                 # 這個值，有點難決定，因為遇到「艷」、和「枒」這2種情況是相反的。
+                # PS: 也有筆劃少，但會造成 heavy 的情況，例如：及component.
+                # PS: 有些字體風格習慣性讓右邊較大。例如：pop-gothic
                 if use_thin_stroke_rule:
-                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.45)
+                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.38)
 
                 if use_complex_stroke_rule:
                     # 筆劃較多
-                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.295)
+                    MAP_THRESHOLD = int(GLYPH_WIDTH * 0.29)
 
                 if SHOW_DEBUG_MESSAGE:
                     print('MAP_THRESHOLD:', MAP_THRESHOLD)
