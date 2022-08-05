@@ -1,5 +1,6 @@
 #!/Applications/FontForge.app/Contents/Resources/opt/local/bin/fontforge
 #!/usr/local/bin/fontforge
+# usage: merge_font.pe main.ttf added.ttf outout.sfdir
 
 i = 2
 if(i < $argc)
