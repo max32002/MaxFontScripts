@@ -81,6 +81,11 @@ def copy_out(args):
     if len(target_unicode_set) == 0:
         if not range_string is None:
             if len(range_string) > 0:
+                # convert between symbole to ','
+                if '-' in range_string:
+                    range_string = range_string.replace('-',',')
+                if '~' in range_string:
+                    range_string = range_string.replace('~',',')
                 if ',' in range_string:
                     range_begin = range_string.split(',')[0]
                     range_end = range_string.split(',')[1]
