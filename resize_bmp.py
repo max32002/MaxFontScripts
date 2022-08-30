@@ -8,6 +8,11 @@ import glob
 from PIL import Image
 
 def resize(filename, width):
+    import PIL.Image
+    if not hasattr(PIL.Image, 'Resampling'):  # Pillow<9.0
+        PIL.Image.Resampling = PIL.Image
+    # Now PIL.Image.Resampling.BICUBIC is always recognized.
+
     ret = False
     #im = Image.open( "U_36935.bmp" )
     im = Image.open( filename )
@@ -20,8 +25,10 @@ def resize(filename, width):
     # Possible values are: 
     # PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC and PIL.Image.ANTIALIAS. 
     # Almost all of them were changed in this version.
+
+    # DeprecationWarning: ANTIALIAS is deprecated and will be removed in Pillow 10 (2023-07-01). Use Resampling.LANCZOS instead.
     if im.size[0] != width:
-        nim = im.resize( (width, height), Image.ANTIALIAS )
+        nim = im.resize( (width, height), Image.BILINEAR )
         #print(nim.size)
         #nim.save( "resized.jpg" )
         nim.save(filename)
