@@ -25,6 +25,20 @@ def resize(source, target, width):
     # Almost all of them were changed in this version.
     if im.size[0] != width:
         nim = im.resize( (width, height), PIL.Image.Resampling.BICUBIC )
+
+        split_tup = os.path.splitext(target)
+        file_extension = split_tup[1].upper()
+
+        need_convert_rgb = False
+        if file_extension == '.JPG' or file_extension == '.JPEG':
+            need_convert_rgb = True
+
+        if file_extension == '.BMP':
+            need_convert_rgb = True
+
+        if need_convert_rgb:
+            nim = nim.convert('RGB')
+
         nim.save(target)
         ret = True
 
@@ -42,7 +56,7 @@ def t_or_f(arg):
 def convert(args):
 
     source, target = args.input, args.output
-    width = args.size
+    width = args.width
     overwrite = t_or_f(args.overwrite)
     mode = args.mode
 
@@ -78,7 +92,7 @@ def convert(args):
 
     print("source:", source)
     print("target:", target)
-    print("new size:", width)
+    print("new width:", width)
     print("overwrite:", overwrite)
     print("mode:", mode)
 
@@ -100,7 +114,7 @@ def cli():
         help="target image",
         type=str)
 
-    parser.add_argument("--size",
+    parser.add_argument("--width",
         help="new target width",
         required=True,
         type=int)
