@@ -88,7 +88,7 @@ def cli():
     # convert name list.
     parser.add_argument("--namelist",
         help="namelist string",
-        default="1",
+        default="",
         type=str)
 
     args = parser.parse_args()
