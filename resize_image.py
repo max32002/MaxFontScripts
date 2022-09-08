@@ -26,6 +26,9 @@ def resize(source, target, width):
     if im.size[0] != width:
         nim = im.resize( (width, height), PIL.Image.Resampling.BICUBIC )
 
+        print("image.mode:", nim.mode)
+        #print("image.getbands():", nim.getbands())
+
         split_tup = os.path.splitext(target)
         file_extension = split_tup[1].upper()
 
@@ -37,7 +40,13 @@ def resize(source, target, width):
             need_convert_rgb = True
 
         if need_convert_rgb:
-            nim = nim.convert('RGB')
+            # convert to white
+            if nim.mode == "RGBA":
+                background = Image.new("RGB", nim.size, (255, 255, 255))
+                background.paste(nim, mask=nim.split()[3])
+                nim = background
+
+            #nim = nim.convert('RGB')
 
         nim.save(target)
         ret = True
