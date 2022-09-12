@@ -15,15 +15,21 @@ def resize(source, target, width):
     # Now PIL.Image.Resampling.BICUBIC is always recognized.
 
     ret = False
+
     im = Image.open(source)
-    ratio = float(width)/im.size[0]
+
+    ratio = 1
+    if width is None:
+        width = im.size[0]
+    else:
+        ratio = float(width)/im.size[0]
     height = int(im.size[1]*ratio)
     # Image resizing methods resize() and thumbnail() take a resample argument, 
     # which tells which filter should be used for resampling. 
     # Possible values are: 
     # PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC and PIL.Resampling.LANCZOS. 
     # Almost all of them were changed in this version.
-    if im.size[0] != width:
+    if im.size[0] > 0:
         nim = im.resize( (width, height), PIL.Image.Resampling.BICUBIC )
 
         print("image.mode:", nim.mode)
@@ -79,9 +85,10 @@ def convert(args):
             print("Error: source image[%s] not exists." % (source))
 
     if pass_check:
-        if width <= 0:
-            pass_check = False
-            print("Error: size format wrong")
+        if not width is None:
+            if width <= 0:
+                pass_check = False
+                print("Error: size format wrong")
 
     # rename target filename.
     if pass_check:
@@ -125,7 +132,7 @@ def cli():
 
     parser.add_argument("--width",
         help="new target width",
-        required=True,
+        required=False,
         type=int)
 
     parser.add_argument("--mode",
