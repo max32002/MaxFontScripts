@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 
+import argparse
+import platform
 import LibGlyph
 
 from os.path import join, exists, normpath, basename
-
 
 def output_to_file(myfile, myfont_set):
     for item in myfont_set:
@@ -30,38 +31,56 @@ def output_to_file(myfile, myfont_set):
             #pass
         myfile.write(output_string)
 
-
-def get_ttf_chars_list(source_ff, unicode_field):
-    #source_ff = 'Naikai_yue.sfdir'
+def get_ttf_chars_list(source_ff, unicode_field, filename_output):
     source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_ff, unicode_field)
-
-    print("length source:", len(source_unicode_set))
-    print("output compare result to file...")
-
-    filename_output = "ttf_char_list_%s.txt" % (basename(normpath(source_ff)))
-    print("output file: %s" % filename_output)
-    outfile = open(filename_output, 'w')
     sorted_set=sorted(source_unicode_set)
-    output_to_file(outfile,sorted_set)
+
+    print("charset length:", len(source_unicode_set))
+    #print("output compare result to file...")
+    print("output file: %s" % filename_output)
+    outfile = None
+    if platform.system() == 'Windows':
+        outfile = open(filename_output, 'w', encoding='UTF-8')
+    else:
+        outfile = open(filename_output, 'w')
+
+    output_to_file(outfile ,sorted_set)
     outfile.close()
 
+def main(args):
+    source_ff = args.input
+    if not ".sfdir" in source_ff:
+        source_ff += ".sfdir"
 
-if __name__ == '__main__':
-    import sys
+    source_name = (basename(normpath(source_ff)))
+    if source_name.endswith(".sfdir"):
+        source_name = source_name[:len(source_name)-6]
+    filename_output = "charset_%s.txt" % source_name
+    if args.output:
+        filename_output = args.output
+    print("input:", source_ff)
+    print("output:", filename_output)
 
     # from 1 to 3.
     #unicode_field = 2       # for Noto Sans
     unicode_field = 2
+    
+    get_ttf_chars_list(source_ff, unicode_field, filename_output)
 
-    argument_count = 1 + 1
-    if len(sys.argv)==argument_count:
-        source_ff = sys.argv[1]
-        if len(source_ff) > 1:
-            if not ".sfdir" in source_ff:
-                source_ff += ".sfdir"
-            get_ttf_chars_list(source_ff, unicode_field)
-            
-    else:
-        print("Argument must be: %d" % (argument_count -1))
-        print("Ex:%s folder_name" % (sys.argv[0]))
+def cli():
+    parser = argparse.ArgumentParser(
+            description="get ttf chars list")
 
+    parser.add_argument("--input",
+        help=".sfdir file path",
+        type=str)
+
+    parser.add_argument("--output",
+        help=".txt file path",
+        type=str)
+    
+    args = parser.parse_args()
+    main(args)
+
+if __name__ == "__main__":
+    cli()
