@@ -8,6 +8,7 @@ import LibGlyph
 from os.path import join, exists, normpath, basename
 
 def output_to_file(myfile, myfont_set):
+    full_text = []
     for item in myfont_set:
         # filter
         if item < 13300:
@@ -24,12 +25,13 @@ def output_to_file(myfile, myfont_set):
             #output_string = "%s\n" % (chr(item))
             #output_string = "%s " % (chr(item))
             #output_string = '"%s",' % (chr(item))
+            full_text.append(output_string)
         except Exception as exc:
             print("error item:%d" %(item))
             print("error item(hex):%s" %(str(hex(item))))
             raise
             #pass
-        myfile.write(output_string)
+    myfile.write(''.join(full_text))
 
 def get_ttf_chars_list(source_ff, unicode_field, filename_output):
     source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_ff, unicode_field)
@@ -46,6 +48,7 @@ def get_ttf_chars_list(source_ff, unicode_field, filename_output):
 
     output_to_file(outfile ,sorted_set)
     outfile.close()
+    outfile = None
 
 def main(args):
     source_ff = args.input
