@@ -61,8 +61,11 @@ def copy_out(args):
     if check_altuni2:
         print("check AltUni2")
 
+    print("Loading more project...")
     #more_unicode_set, more_dict = LibGlyph.load_files_to_set_dict(more_ff, unicode_field, check_altuni2)
     more_unicode_set, more_dict = LibGlyph.load_files_to_set_dict(more_ff, unicode_field)
+    
+    print("Loading less project...")
     #less_unicode_set, less_dict = LibGlyph.load_files_to_set_dict(less_ff, unicode_field, check_altuni2)
     less_unicode_set, less_dict = LibGlyph.load_files_to_set_dict(less_ff, unicode_field)
     

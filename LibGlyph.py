@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 
+import os
 from os import listdir, remove
-from os.path import join, splitext
+from os.path import join
+import concurrent.futures
 
 def load_unicode_from_file(filename_input, unicode_field):
     mycode = 0
     width_int = 0
 
+    #print("filename_input", filename_input)
     myfile = open(filename_input, 'r')
 
     glyph_info = {}
@@ -55,6 +58,7 @@ def load_unicode_from_file(filename_input, unicode_field):
     myfile.close()
     myfile = None
 
+    glyph_info['filepath']=filename_input
     glyph_info['unicode']=mycode
     glyph_info['width']=width_int
 
@@ -66,9 +70,38 @@ def load_files_to_set_dict(ff_folder, unicode_field, check_altuni2=False):
     my_dict = {}
 
     # 取得所有檔案與子目錄名稱
-    files = listdir(ff_folder)
+    file_paths = [os.path.join(ff_folder, file) for file in os.listdir(ff_folder) if file.endswith('.glyph') and os.path.isfile(os.path.join(ff_folder, file))]
 
-    # 以迴圈處理
+    # multi thread
+    results = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = executor.map(load_unicode_from_file, file_paths, [unicode_field] * len(file_paths))
+
+    for glyph_info in results:
+        unicode_info = 0
+        if 'unicode' in glyph_info:
+            unicode_info = glyph_info['unicode']
+
+        if check_altuni2:
+            if 'altuni2' in glyph_info:
+                altuni2_info = glyph_info['altuni2']
+                #print("altuni2_info:", altuni2_info)
+                if len(altuni2_info) > 0:
+                    altuni2_int = int(altuni2_info,16)
+                    #print("altuni2_int:", altuni2_int)
+                    my_set.add(altuni2_int)
+                    my_dict[altuni2_int] = f
+
+        #print('code:', unicode_info)
+        if unicode_info > 0 and unicode_info < 0x110000:
+            #print('code:', unicode_info)
+            my_set.add(unicode_info)
+            file_name = os.path.basename(glyph_info["filepath"])
+            my_dict[unicode_info] = file_name
+            #break
+
+    # single thread
+    '''
     for f in files:
         # must match extension only, exclude ".extension.tmp" file.
         extension = splitext(f)
@@ -95,6 +128,7 @@ def load_files_to_set_dict(ff_folder, unicode_field, check_altuni2=False):
             if unicode_info > 0 and unicode_info < 0x110000:
                 #print('code:', unicode_info)
                 my_set.add(unicode_info)
-                my_dict[unicode_info] = f
-                #break
+                my_dict[unicode_info] = f    
+    '''
+
     return my_set, my_dict
