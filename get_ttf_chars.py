@@ -67,9 +67,11 @@ def main(args):
                 #print("image file name", filename)
                 char_string = os.path.splitext(filename)[0]
                 if len(char_string) > 0:
-                    #print("char_string", char_string)
-                    #source_unicode_set.add(chr(int(char_string)))
-                    source_unicode_set.add(int(char_string))
+                    if char_string.isnumeric():
+                        #print("char_string", char_string)
+                        char_int = int(char_string)
+                        if char_int > 0 and char_int <= 65536:
+                            source_unicode_set.add(char_int)
     
     if len(source_unicode_set) > 0:
         source_name = (basename(normpath(source_folder)))
