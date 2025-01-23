@@ -63,7 +63,12 @@ def main(args):
     if args.mode == "unicode_image":
         target_folder_list = os.listdir(source_folder)
         for filename in target_folder_list:
+            is_supported_image = False
+            if filename.endswith(".bmp") or filename.endswith(".pgm") or filename.endswith(".ppm"): 
+                is_supported_image = True
             if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg"):
+                is_supported_image = True
+            if is_supported_image:
                 #print("image file name", filename)
                 char_string = os.path.splitext(filename)[0]
                 if len(char_string) > 0:

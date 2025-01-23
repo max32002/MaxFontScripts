@@ -3,60 +3,49 @@
 
 import os
 from os import mkdir
-from os.path import exists
+from os.path import exists, normpath, basename
 import argparse
 
-def import_svg(ff_tmp, out_path, svg_path, filename_pattern, filename_source, scale, simplify):
-    print("Open font:", ff_tmp)
+def import_svg(ff_path, out_path, svg_path, filename_pattern, filename_source, scale, simplify):
+    print("Open font:", ff_path)
     print("Save dir:", out_path)
     print("Svg path:", svg_path)
     print("Filename pattern:", filename_pattern)
     print("Filename source:", filename_source)
 
-    '''
-scale (boolean, default=True)
-Scale imported images and SVGs to ascender height
+    if len(ff_path) > 0:
+        if ff_path[:1] == "/":
+            ff_path = ff_path[:-1]
 
-simplify (boolean, default=True)
-Run simplify on the output of stroked paths
+    if ff_path.endswith(".ttf"):
+        font_name = (basename(normpath(ff_path)))
+        project_path = font_name + ".sfdir"
+        if out_path is None:
+            out_path = project_path
 
-accuracy (float, default=0.25)
-The minimum accuracy (in em-units) of stroked paths.
+    export_as_font = False
 
-default_joinlimit (float, default=-1)
-Override the format’s default miterlimit for stroked paths, which is 10.0 for PostScript and 4.0 for SVG. (Value -1 means “inherit” those defaults.)
-
-handle_eraser (boolean, default=False)
-Certain programs use pens with white ink as erasers. When this flag is set FontForge will attempt to simulate that.
-
-correctdir (boolean, default=False)
-Run “Correct direction” on (some) PostScript paths
-
-usesystem (boolean, default=False)
-Ignore the above keyword settings and use the values set by the user in the Import options dialog.
-
-asksystem (boolean, default=False)
-If the UI is present show the Import options dialog to the user and use the chosen values (does nothing otherwise).
-    '''
-
-    if not exists(out_path):
-        mkdir(out_path)
+    if out_path is None:
+        if ff_path.endswith(".ttf"):
+            export_as_font = True
     else:
-        pass
+        if out_path.endswith(".ttf"):
+            export_as_font = True
 
-    myfont=fontforge.open(ff_tmp)
+    if not out_path is None:
+        if out_path.endswith(".sfdir"):
+            if not exists(out_path):
+                mkdir(out_path)
+
+    myfont=fontforge.open(ff_path)
     myfont.selection.all()
-
-    idx = 0
 
     skip_list = []
 
-    # read chars list from text.
-    #for char in mychars:
-        #myfont.selection.select(ord(char))
-
     import_counter = 0
     import_char_list = ""
+    
+    idx = 0
     for glyph in myfont.selection.byGlyphs:
         idx +=1
 
@@ -83,37 +72,42 @@ If the UI is present show the Import options dialog to the user and use the chos
 
         debug = False       # online
         #debug = True
-        debug_char = "乩"
-        debug_char_int = ord(debug_char)
 
         if debug:
-            if unicode_int == debug_char_int:
-                print("match debug char ... start")
-                print("debug svg path:", svg_filepath)
+            print("svg path:", svg_filepath)
+            print("filename:", filename)
+            print("filename_variable:", filename_variable)
 
         if exists(svg_filepath):
             if debug:
                 print("found matched svg path: %s" % (svg_filepath) )
+
             glyph.clear()
             glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
             glyph.width = previous_width
             import_counter += 1
             import_char_list += chr(unicode_int)
 
-        if debug:
-            if unicode_int == debug_char_int:
-                print("match debug char ... end")
-
         if idx % 1000 == 0:
-            print("Processing (%d)export: %d" % (idx, import_counter))
+            print("Processing (%d)export" % (idx))
 
     formated_imported_text = import_char_list
     if len(formated_imported_text) > 300:
         formated_imported_text = formated_imported_text[:40] + "..." + formated_imported_text[-40:]
-    print("Done,\nImported count:%d \nImported text:%s\n" % (import_counter, formated_imported_text))
+    print("Source font glyph count:", idx)
+    print("Imported count:", import_counter)
+    #print("Imported text:", formated_imported_text)
 
     if import_counter > 0:
-        myfont.save(out_path)
+        if export_as_font:
+            myfont.generate(out_path)
+        else:
+            if out_path is None:
+                myfont.save()
+            else:
+                myfont.save(out_path)
+    else:
+        print("Do nothing due to no changed glyph.")
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -144,7 +138,7 @@ def cli():
              'use char for character.\n'
              'use unicode_hex for unicode hex .\n'
              'use unicode_hex for unicode decimal.',
-        default="char",
+        default="unicode_int",
         )
 
     parser.add_argument('--disable_scale', 
