@@ -6,8 +6,12 @@ from os.path import exists, normpath, basename
 import argparse
 
 def clear_main(args):
+    target_string = args.string
     ff_path = args.input
     out_path = args.output
+    skip_alt=False
+    if args.skip_alt:
+        skip_alt=True
 
     if len(ff_path) > 0:
         if ff_path[:1] == "/":
@@ -30,11 +34,31 @@ def clear_main(args):
 
     print("Open font:", ff_path)
     print("Save font:", out_path)
-    print("Selected char:", args.string)
+
+    if len(target_string) == 0:
+        # is need read from file.
+        string_file = args.file
+        if len(string_file) > 0:
+            if exists(string_file):
+                my_list = []
+                f = open(string_file,"r", encoding='utf-8')
+                file_raw_list = f.readlines()
+                for line in file_raw_list:
+                    line = line.strip()
+                    for char in line:
+                        if len(char) > 0:
+                            my_list.append(char)
+                f.close()
+                target_string = ''.join(my_list)
+                print("string length in file:", len(target_string))
+            else:
+                print("input file not exist:", string_file)
+
+    print("Selected char length:", len(target_string))
 
     if exists(ff_path):
         myfont=fontforge.open(ff_path)
-        myfont, cleared_char_list = clear_glyph(myfont, args.string)
+        myfont, cleared_char_list = clear_glyph(myfont, target_string, skip_alt)
 
         if len(cleared_char_list) > 0:
             if export_as_font:
@@ -47,7 +71,7 @@ def clear_main(args):
         else:
             print("Do nothing due to no changed glyph.")
 
-def clear_glyph(myfont, selected_chars):
+def clear_glyph(myfont, selected_chars, skip_alt=False):
 
     myfont.selection.all()
 
@@ -84,8 +108,16 @@ def clear_glyph(myfont, selected_chars):
             print("glyph char:", chr(unicode_int))
 
         if chr(unicode_int) in selected_chars:
-            glyph.clear()
-            clear_char_list.add(unicode_int)
+            
+            # to avoid: Lookup subtable contains unused glyph uni???? making the whole subtable invalid
+            delete_flag = True
+            if skip_alt:
+                if not glyph.altuni is None:
+                    delete_flag = False
+
+            if delete_flag:
+                glyph.clear()
+                clear_char_list.add(unicode_int)
 
         if idx % 1000 == 0:
             print("Processing glyph: %d" % (idx))
@@ -113,6 +145,15 @@ def cli():
         help="selected string",
         default='',
         type=str)
+
+    parser.add_argument("--file",
+        help="selected string file",
+        default='',
+        type=str)
+
+    parser.add_argument("--skip_alt",
+        help="let all alt char alive",
+        action='store_true')
 
     args = parser.parse_args()
 

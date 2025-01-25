@@ -40,7 +40,7 @@ def remove_out(args):
         if len(string_file) > 0:
             if exists(string_file):
                 my_list = []
-                f = open(string_file,"r")
+                f = open(string_file,"r", encoding='utf-8')
                 file_raw_list = f.readlines()
                 for line in file_raw_list:
                     line = line.strip()
