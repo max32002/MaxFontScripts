@@ -2,7 +2,6 @@
 #encoding=utf-8
 
 import os
-from os import mkdir
 from os.path import exists, normpath, basename
 import argparse
 
@@ -37,13 +36,8 @@ def import_main(args):
         if out_path.endswith(".ttf") or out_path.endswith(".woff") or out_path.endswith(".woff2"):
             export_as_font = True
 
-    if not out_path is None:
-        if out_path.endswith(".sfdir"):
-            if not exists(out_path):
-                mkdir(out_path)
-
     print("Open font:", ff_path)
-    print("Save dir:", out_path)
+    print("Save font:", out_path)
     print("Svg path:", args.svg_path)
     print("Filename pattern:", args.filename_pattern)
     print("Filename source:", args.filename_source)
@@ -197,12 +191,12 @@ def cli():
             description="import svg to font")
 
     parser.add_argument("--input",
-        help="input font file",
+        help="input font project or file",
         required=True,
         type=str)
 
     parser.add_argument("--output",
-        help="output font folder",
+        help="output font project or file",
         default=None,
         type=str)
 

@@ -93,13 +93,8 @@ def simplify(args):
         if out_path.endswith(".ttf") or out_path.endswith(".woff") or out_path.endswith(".woff2"):
             export_as_font = True
 
-    if not out_path is None:
-        if out_path.endswith(".sfdir"):
-            if not exists(out_path):
-                mkdir(out_path)
-
     print("Open font:", ff_path)
-    print("Save dir:", out_path)
+    print("Save font:", out_path)
 
     myfont=fontforge.open(ff_path)
     myfont.selection.all()
@@ -131,13 +126,13 @@ def cli():
             description="Converts fonts using FontForge")
 
     parser.add_argument("--input",
-        help="input font file",
+        help="input font project or file",
         required=True,
         type=str)
 
     parser.add_argument("--output",
+        help="output font project or file",
         default="output.ttf",
-        help="output sfdir path",
         type=str)
 
     # font config.

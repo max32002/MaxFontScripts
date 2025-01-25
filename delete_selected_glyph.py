@@ -3,7 +3,6 @@
 
 import LibGlyph
 
-from os import makedirs, remove
 from os.path import join, exists
 
 import argparse
@@ -33,8 +32,8 @@ def remove_out(args):
             print("string file:", string_file)
     if len(target_string) > 0 and len(target_string) <= 80:
         print("string:", target_string)
-    if check_altuni2:
-        print("check AltUni2")
+    
+    print("check altuni2:", check_altuni2)
 
     if len(target_string) == 0:
         # is need read from file.
@@ -56,8 +55,6 @@ def remove_out(args):
 
     if len(target_string) == 0:
         print("range:", range_string)
-    if check_altuni2:
-        print("check altuni2: True")
 
     source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_ff, unicode_field, check_altuni2)
 
@@ -99,9 +96,6 @@ def remove_out(args):
     remove_count = 0
     for item in diff_set_common:
         source_path = join(source_ff,source_dict[item])
-        #print("filename:", target_path)
-        #target_path = join(upgrade_folder,source_dict[item])
-        #if exists(target_path):
         if exists(source_path):
             remove_count += 1
             #print("exist at path:", source_path)
@@ -109,8 +103,8 @@ def remove_out(args):
             pass
         
         #shutil.copy(source_path,target_path)
-        if not args.only_check:
-            remove(source_path)
+        if not args.check_only:
+            os.remove(source_path)
 
     if remove_count > 0:
         print("remove count:", remove_count)
@@ -172,7 +166,7 @@ def cli():
         default="True",
         type=str)
 
-    parser.add_argument('--only_check', action='store_true')
+    parser.add_argument('--check_only', action='store_true')
     parser.add_argument('--check_alt', action='store_true')
     
     args = parser.parse_args()
