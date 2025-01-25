@@ -6,16 +6,10 @@ import LibGlyph
 from os import makedirs, remove
 from os.path import join, exists
 
-# to remove file.
-from os import remove
-
 import argparse
 
-def copy_out(args):
+def remove_out(args):
     source_ff = args.input
-
-    is_output_glyph = False     # view log only
-    is_output_glyph = True      # get real file.
 
     target_string = args.string
     string_file = args.file
@@ -28,7 +22,7 @@ def copy_out(args):
     unicode_field = args.unicode_field
 
     check_altuni2 = False
-    if args.alt == "True":
+    if args.check_alt:
         check_altuni2 = True
 
     # start to scan files.
@@ -102,29 +96,26 @@ def copy_out(args):
     print("length selected string:", len(target_unicode_set))
     print("length intersection:", len(diff_set_common))
 
-    if is_output_glyph:
-        print("remove selected glyph file in path:", target_string)
-
-        exist_count = 0
-        for item in diff_set_common:
-
-            source_path = join(source_ff,source_dict[item])
-            #print("filename:", target_path)
-            #target_path = join(upgrade_folder,source_dict[item])
-            #if exists(target_path):
-            if exists(source_path):
-                print("exist at path:", source_path)
-                exist_count += 1
-            else:
-                pass
-            
-            #shutil.copy(source_path,target_path)
+    remove_count = 0
+    for item in diff_set_common:
+        source_path = join(source_ff,source_dict[item])
+        #print("filename:", target_path)
+        #target_path = join(upgrade_folder,source_dict[item])
+        #if exists(target_path):
+        if exists(source_path):
+            remove_count += 1
+            #print("exist at path:", source_path)
+        else:
+            pass
+        
+        #shutil.copy(source_path,target_path)
+        if not args.only_check:
             remove(source_path)
 
-        if exist_count > 0:
-            print("exist count:", exist_count)
-        else:
-            print("target string not exist in project!")
+    if remove_count > 0:
+        print("remove count:", remove_count)
+    else:
+        print("target string not exist in project!")
 
 
 def cli():
@@ -181,13 +172,11 @@ def cli():
         default="True",
         type=str)
 
-    parser.add_argument("--alt",
-        help="check AltUni2",
-        default='False',
-        type=str)
-
+    parser.add_argument('--only_check', action='store_true')
+    parser.add_argument('--check_alt', action='store_true')
+    
     args = parser.parse_args()
-    copy_out(args)
+    remove_out(args)
 
 if __name__ == "__main__":
     cli()
