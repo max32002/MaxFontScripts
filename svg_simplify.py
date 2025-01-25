@@ -50,7 +50,7 @@ def main(args):
 
 def cli():
     parser = argparse.ArgumentParser(
-            description="get ttf chars list")
+            description="batch convert svg from source folder to target folder")
 
     parser.add_argument("--input",
         help="source folder",
