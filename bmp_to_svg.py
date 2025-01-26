@@ -25,7 +25,7 @@ def main(args):
     print("Total file in from folder:", len(target_folder_list))
     for filename in target_folder_list:
         is_supported_image = False
-        if filename.endswith(".svg"): 
+        if filename.endswith(".bmp") or filename.endswith(".pbm") or filename.endswith(".pgm") or filename.endswith(".ppm"): 
             is_supported_image = True
         if is_supported_image:
             filename_list.append(filename)
@@ -34,8 +34,9 @@ def main(args):
         idx+=1
         #print("convert filename:", name)
         from_svg_path = os.path.join(from_folder, filename)
-        to_svg_path = os.path.join(to_folder, filename)
-        shell_cmd = 'scour -q -i %s -o %s --enable-viewboxing --enable-id-stripping --enable-comment-stripping --shorten-ids --indent=none' % (from_svg_path, to_svg_path)
+        filename_main = os.path.splitext(os.path.basename(filename))[0]
+        to_svg_path = os.path.join(to_folder, filename_main + ".svg")
+        shell_cmd = 'potrace -b svg -u 60 %s -o %s' % (from_svg_path, to_svg_path)
         #print("shell_cmd:", shell_cmd)
         
         # single thread
