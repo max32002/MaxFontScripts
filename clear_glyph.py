@@ -18,7 +18,7 @@ def clear_main(args):
             ff_path = ff_path[:-1]
 
     if ff_path.endswith(".ttf"):
-        font_name = (basename(normpath(ff_path)))
+        font_name = basename(normpath(ff_path))
         project_path = font_name + ".sfdir"
         if out_path is None:
             out_path = project_path
@@ -59,6 +59,7 @@ def clear_main(args):
     if exists(ff_path):
         myfont=fontforge.open(ff_path)
         myfont, cleared_char_list = clear_glyph(myfont, target_string, skip_alt)
+        print("Cleared count:", len(clear_char_list))
 
         if len(cleared_char_list) > 0:
             if export_as_font:
@@ -72,58 +73,37 @@ def clear_main(args):
             print("Do nothing due to no changed glyph.")
 
 def clear_glyph(myfont, selected_chars, skip_alt=False):
-
     myfont.selection.all()
-
-    skip_list = []
-    clear_char_list = set()
-    fail_char_list = set()
-
     all_glyph_list = list(myfont.selection.byGlyphs)
     print("Source font total glyph:", len(all_glyph_list))
-    
+    clear_char_list = set()
     idx = 0
     for glyph in all_glyph_list:
         idx +=1
-        
         unicode_int = glyph.unicode
-        if unicode_int in skip_list:
-            continue
-
         if unicode_int <= 0:
             continue
-
-        current_glyph_width = glyph.width
         if glyph.width <= 0:
             continue
-
         debug = False       # online
         #debug = True
-
         if debug:
             print("-"*20)
             print("glyph originalgid:", glyph.originalgid)
             print("glyph unicode:", unicode_int)
             print("glyph altuni:", glyph.altuni)
             print("glyph char:", chr(unicode_int))
-
         if chr(unicode_int) in selected_chars:
-            
             # to avoid: Lookup subtable contains unused glyph uni???? making the whole subtable invalid
             delete_flag = True
             if skip_alt:
                 if not glyph.altuni is None:
                     delete_flag = False
-
             if delete_flag:
                 glyph.clear()
                 clear_char_list.add(unicode_int)
-
         if idx % 1000 == 0:
             print("Processing glyph: %d" % (idx))
-
-    print("Cleared count:", len(clear_char_list))
-
     return myfont, clear_char_list
 
 

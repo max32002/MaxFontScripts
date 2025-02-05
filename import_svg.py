@@ -22,7 +22,7 @@ def import_main(args):
             ff_path = ff_path[:-1]
 
     if ff_path.endswith(".ttf"):
-        font_name = (basename(normpath(ff_path)))
+        font_name = basename(normpath(ff_path))
         project_path = font_name + ".sfdir"
         if out_path is None:
             out_path = project_path

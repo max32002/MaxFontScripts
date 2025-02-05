@@ -111,7 +111,10 @@ def simplify(args):
     if not args.macstyle is None:
         myfont.macstyle = args.macstyle
 
-    myfont.simplify(args.error_bound, ('mergelines','ignoreslopes','setstarttoextremum'))
+    if not args.error_bound is None:
+        myfont.simplify(args.error_bound, ('mergelines','ignoreslopes','setstarttoextremum'))
+    else:
+        myfont.simplify()
 
     if export_as_font:
         myfont.generate(out_path)
@@ -156,7 +159,7 @@ def cli():
         help="Bold (if set to 1)",
         type=int)
 
-    parser.add_argument('--error_bound', type=float, default=0.1)
+    parser.add_argument('--error_bound', type=float, default=None)
 
     args = parser.parse_args()
     simplify(args)
