@@ -5,7 +5,13 @@ import argparse
 import platform
 import LibGlyph
 import os
-from os.path import normpath, basename
+
+IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
+
+def is_image_file(filename):
+    _ , file_extension = os.path.splitext(filename)
+    file_extension = file_extension.upper()
+    return file_extension in IMG_EXTENSIONS
 
 def output_to_file(myfile, myfont_set):
     full_text = []
@@ -64,9 +70,7 @@ def main(args):
         target_folder_list = os.listdir(source_folder)
         for filename in target_folder_list:
             is_supported_image = False
-            if filename.endswith(".bmp") or filename.endswith(".pgm") or filename.endswith(".ppm"): 
-                is_supported_image = True
-            if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg"):
+            if is_image_file(filename): 
                 is_supported_image = True
             if is_supported_image:
                 #print("image file name", filename)
@@ -79,7 +83,7 @@ def main(args):
                             source_unicode_set.add(char_int)
     
     if len(source_unicode_set) > 0:
-        source_name = (basename(normpath(source_folder)))
+        source_name = os.path.basename(os.path.normpath(source_folder))
         if source_name.endswith(".sfdir"):
             source_name = source_name[:len(source_name)-6]
         if filename_output == "output.txt":

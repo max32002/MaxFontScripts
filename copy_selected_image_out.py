@@ -1,43 +1,42 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 
-import LibGlyph
 import os
 import shutil
 import argparse
 import platform
 
+IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
+
+def is_image_file(filename):
+    _ , file_extension = os.path.splitext(filename)
+    file_extension = file_extension.upper()
+    return file_extension in IMG_EXTENSIONS
+
 def copy_out(args):
+    source_folder = args.input
+    target_output = args.output
+    source_unicode_set = set()
+
     source_ff = args.input
 
     is_output_glyph = False     # view log only
     is_output_glyph = True      # get real file.
 
-    upgrade_folder = args.output
     target_string = args.string
     string_file = args.file
     range_string = args.range
     #range_string_int = args.range_int
     range_string_int = None
 
-    
-    # from 1 to 3.
-    #unicode_field = 2       # for Noto Sans
-    unicode_field = args.unicode_field
-
-    check_altuni2 = False
-    if args.alt == "True":
-        check_altuni2 = True
 
     # start to scan files.
-    print("source project:", source_ff)
-    print("output:", upgrade_folder)
+    print("source folder:", source_folder)
+    print("output:", target_output)
     print("string length:", len(target_string))
     if not string_file is None:
         if len(string_file) > 0:
             print("string file:", string_file)
-    if check_altuni2:
-        print("check AltUni2")
 
     if len(target_string) == 0:
         # is need read from file.
@@ -57,13 +56,6 @@ def copy_out(args):
                 print("string length in file:", len(target_string))
             else:
                 print("input file not exist:", string_file)
-
-    if len(target_string) == 0:
-        print("range:", range_string)
-    if check_altuni2:
-        print("check altuni2: True")
-
-    source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_ff, unicode_field, check_altuni2)
 
     # source set from string.
     target_unicode_set = set()
@@ -95,26 +87,44 @@ def copy_out(args):
                 for r in range(int(range_begin),int(range_end)+1):
                     target_unicode_set.add(r)
 
+    source_dict = {}
+    if args.mode == "unicode_image":
+        target_folder_list = os.listdir(source_folder)
+        for filename in target_folder_list:
+            is_supported_image = False
+            if is_image_file(filename): 
+                is_supported_image = True
+            if is_supported_image:
+                #print("image file name", filename)
+                char_string = os.path.splitext(filename)[0]
+                if len(char_string) > 0:
+                    if char_string.isnumeric():
+                        #print("char_string", char_string)
+                        char_int = int(char_string)
+                        if char_int > 0 and char_int <= 65536:
+                            source_unicode_set.add(char_int)
+                            source_dict[char_int]=filename
+
+
     diff_set_common =  source_unicode_set & target_unicode_set
 
-    print("length source project:", len(source_unicode_set))
+    print("length source folder:", len(source_unicode_set))
     print("length selected string:", len(target_unicode_set))
     print("length intersection:", len(diff_set_common))
 
     if is_output_glyph:
-        print("copy lost glyph file to path:", upgrade_folder)
+        print("copy lost glyph file to path:", target_output)
 
         if len(diff_set_common) > 0:
-            if not os.path.exists(upgrade_folder):
-                os.makedirs(upgrade_folder)
+            if not os.path.exists(target_output):
+                os.makedirs(target_output)
 
         conflic_count = 0
         copy_count = 0
         for item in diff_set_common:
-
-            source_path = os.path.join(source_ff,source_dict[item])
+            source_path = os.path.join(source_folder, source_dict[item])
             #print("filename:", target_path)
-            target_path = os.path.join(upgrade_folder,source_dict[item])
+            target_path = os.path.join(target_output, source_dict[item])
             if os.path.exists(target_path):
                 print("conflic at path:", source_path)
                 conflic_count += 1
@@ -169,23 +179,13 @@ def cli():
         type=str)
 
     parser.add_argument("--output",
-        help="output glyth folder",
-        default='.',
+        help="output file folder",
+        default='output',
         type=str)
 
-    parser.add_argument("--unicode_field",
-        help="unicode_field in glyth",
-        default=2,
-        type=int)
-
-    parser.add_argument("--log",
-        help="generate log file",
-        default="True",
-        type=str)
-
-    parser.add_argument("--alt",
-        help="check AltUni2",
-        default='False',
+    parser.add_argument("--mode",
+        help="mode of folder",
+        default="unicode_image", 
         type=str)
 
     args = parser.parse_args()
