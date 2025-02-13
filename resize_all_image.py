@@ -49,7 +49,8 @@ def resize_all(source_folder, width, target_folder):
             #break
             if file_count % 1000 == 0:
                 print("Processing:", file_count)
-    print("File count:", file_count)
+    print("All file count:", file_count)
+    print("Image file count:", image_count)
     print("Resize count:", convert_count)
     return file_count
 
