@@ -91,10 +91,7 @@ def copy_out(args):
     if args.mode == "unicode_image":
         target_folder_list = os.listdir(source_folder)
         for filename in target_folder_list:
-            is_supported_image = False
             if is_image_file(filename): 
-                is_supported_image = True
-            if is_supported_image:
                 #print("image file name", filename)
                 char_string = os.path.splitext(filename)[0]
                 if len(char_string) > 0:
