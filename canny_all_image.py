@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 
+import cv2
+import numpy as np
 import os
-import glob
-from PIL import Image
 import argparse
 
 IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
@@ -13,18 +13,7 @@ def is_image_file(filename):
     file_extension = file_extension.upper()
     return file_extension in IMG_EXTENSIONS
 
-def resize_one(filename, width, target):
-    ret = False
-    im = Image.open(filename)
-    ratio = float(width)/im.size[0]
-    height = int(im.size[1]*ratio)
-    if im.size[0] != width and ratio > 0.0:
-        nim = im.resize( (width, height), Image.BILINEAR )
-        nim.save(target)
-        ret = True
-    return ret
-
-def resize_all(source_folder, width, output_folder):
+def canny_all(source_folder, width, output_folder):
     file_count = 0
     image_count = 0
     convert_count = 0
@@ -40,31 +29,43 @@ def resize_all(source_folder, width, output_folder):
             #print("image file name", filename)
             
             source_path = os.path.join(source_folder, filename)
-            target_path = os.path.join(output_folder, filename)
+            output_path = os.path.join(output_folder, filename)
 
-            is_convert = False
+            img = cv2.imread(source_path, cv2.IMREAD_GRAYSCALE)
+            
             if width > 0:
-                is_convert = resize_one(source_path, width, target_path)
+                real_h = 0
+                real_w = 0
+                if len(img.shape) == 2:
+                    real_h, real_w = img.shape
+                if len(img.shape) == 3:
+                    real_h, real_w, _ = img.shape
 
-            if is_convert:
-                convert_count+=1
-                #print("convert list:", name)
-            #break
+                ratio = float(width)/real_w
+                height = int(real_h*ratio)
+                if real_w != width and ratio > 0.0:
+                    img = cv2.resize(img, (width, height), interpolation=cv2.INTER_LINEAR)
+
+            # 使用 Canny 邊緣檢測
+            edges = cv2.Canny(img, threshold1=100, threshold2=200)
+            cv2.imwrite(output_path, edges)
+
             if file_count % 1000 == 0:
                 print("Processing:", file_count)
     print("All file count:", file_count)
     print("Image file count:", image_count)
-    print("Resize count:", convert_count)
     return file_count
 
 def cli():
     parser = argparse.ArgumentParser(description="resize all image under directory")
     parser.add_argument("--input", type=str, help="input folder", required=True)
     parser.add_argument("--output", type=str, default=".")
-    parser.add_argument('--width', type=int, default=0, help="size of your output image")
+    parser.add_argument('--width', type=int, default=0, help="size of your output image, do nothing when set to 0")
     
     args = parser.parse_args()
-    resize_all(args.input, args.width, args.output)
+    canny_all(args.input, args.width, args.output)
 
 if __name__ == "__main__":
     cli()
+
+
