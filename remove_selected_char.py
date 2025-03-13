@@ -3,7 +3,7 @@
 
 import argparse
 
-def remove_out(args):
+def process_sets(args):
     try:
         with open(args.input, encoding='utf-8') as input_file:
             input_charset = set(input_file.readline().strip())
@@ -11,15 +11,29 @@ def remove_out(args):
         with open(args.remove, encoding='utf-8') as remove_file:
             remove_charset = set(remove_file.readline().strip())
 
-        diff_set_common = input_charset & remove_charset
-        target_set = input_charset - diff_set_common
+        if args.mode in ["subtract", "sub", "-"]:
+            target_set = input_charset - remove_charset
+        elif args.mode in ["union", "add", "+"]:
+            target_set = input_charset | remove_charset
+        elif args.mode in ["intersect", "int", "&"]:
+            target_set = input_charset & remove_charset
+        else:
+            print(f"Error: Invalid mode '{args.mode}'.")
+            return
+
         sorted_set = sorted(target_set)
         formated_charset = ''.join(sorted_set)
 
         print("length of input file:", len(input_charset))
         print("length of remove file:", len(remove_charset))
-        print("excepted length of formated file:", len(input_charset) - len(remove_charset))
-        print("length intersection:", len(diff_set_common))
+
+        if args.mode in ["subtract", "sub", "-"]:
+            print("excepted length of formated file:", len(input_charset) - len(remove_charset & input_charset))
+        elif args.mode in ["union", "add", "+"]:
+            print("excepted length of formated file:", len(input_charset | remove_charset))
+        elif args.mode in ["intersect", "int", "&"]:
+            print("excepted length of formated file:", len(input_charset & remove_charset))
+
         print("length of target file:", len(target_set))
 
         if formated_charset:
@@ -30,13 +44,14 @@ def remove_out(args):
         print("Error: Input or remove file not found.")
 
 def cli():
-    parser = argparse.ArgumentParser(description="remove char")
+    parser = argparse.ArgumentParser(description="process char sets")
     parser.add_argument("--input", help="input text file", required=True, type=str)
-    parser.add_argument("--remove", help="string to remove", default='', type=str)
-    parser.add_argument("--output", help="input text file", default="new.txt", type=str)
+    parser.add_argument("--remove", help="string to process", required=True, type=str)
+    parser.add_argument("--output", help="output text file", default="new.txt", type=str)
+    parser.add_argument("--mode", help="mode of operation (subtract, union, intersect)", default="subtract", choices=["subtract", "sub", "-", "union", "add", "+", "intersect", "int", "&"], type=str)
 
     args = parser.parse_args()
-    remove_out(args)
+    process_sets(args)
 
 if __name__ == "__main__":
     cli()
