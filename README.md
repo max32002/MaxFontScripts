@@ -24,6 +24,9 @@
 
 建議：補完前2個文字檔就好了，有多餘的時間，再補最後2個文字檔。
 
+## 關於筆畫的json字典檔需要手動下載
+傳送門: https://github.com/max32002/chinese_dictionary
+
 
 ## 相關網頁
 
