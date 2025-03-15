@@ -41,10 +41,11 @@ def import_main(args):
     print("Svg path:", args.svg_path)
     print("Filename pattern:", args.filename_pattern)
     print("Filename source:", args.filename_source)
+    print("export_as_font:", export_as_font)
 
     if exists(ff_path):
         myfont=fontforge.open(ff_path)
-        myfont, import_char_list = import_svg(myfont, args.svg_path, args.filename_pattern, args.filename_source, scale, simplify, args.begin, args.end)
+        myfont, import_char_list = import_svg(myfont, args.svg_path, args.filename_pattern, args.filename_source, scale, simplify, args.width)
 
         # font config.
         if not args.comment is None:
@@ -71,114 +72,83 @@ def import_main(args):
         else:
             print("Do nothing due to no changed glyph.")
 
-def import_svg(myfont, svg_path, filename_pattern, filename_source, scale, simplify, index_begin=0, index_end=99999):
+def import_svg(myfont, svg_path, filename_pattern, filename_source, scale, simplify, width):
 
-    myfont.selection.all()
-
-    skip_list = []
     import_char_list = set()
     fail_char_list = set()
 
-    all_glyph_list = list(myfont.selection.byGlyphs)
-    print("Source font total glyph:", len(all_glyph_list))
-    
+    # 獲取 SVG 檔案列表
+    svg_files = [f for f in os.listdir(svg_path) if f.endswith(".svg")]
+
     idx = 0
-    for glyph in all_glyph_list:
-        idx +=1
-        
-        unicode_int = glyph.unicode
-        if unicode_int in skip_list:
-            continue
+    for filename in svg_files:
+        idx += 1
 
-        if unicode_int <= 0:
-            continue
-
-        current_glyph_width = glyph.width
-        if glyph.width <= 0:
-            continue
-
-        if idx < index_begin:
-            continue
-
-        if idx > index_end:
-            continue
-
-        # altuni, cause glyph expand stroke more times.
-        if glyph.changed:
-            continue
-
-        # due to error:
-        # internal buffer error : Memory allocation failed : growing buffer
-        # I/O error : Memory allocation failed : growing input buffer
-
-        filename_variable = chr(unicode_int)
-        if glyph.originalgid in import_char_list:
-            #print("duplicated char due to altuni:", filename_variable, "id:", glyph.originalgid)
-            continue
-
-        if filename_source == 'unicode_hex':
-            filename_variable = str(hex(unicode_int))[2:]
+        # 從檔名中提取 Unicode 值或字元
         if filename_source == 'unicode_int':
-            filename_variable = unicode_int
-        filename=filename_pattern % (filename_variable)
-        svg_filepath = os.path.join(svg_path,filename)
+            try:
+                unicode_int = int(filename.replace(".svg", ""))
+            except ValueError:
+                print(f"警告：無法從檔名 '{filename}' 中提取 Unicode 值。")
+                continue
+        elif filename_source == 'unicode_hex':
+            try:
+                unicode_int = int(filename.replace(".svg", ""), 16)
+            except ValueError:
+                print(f"警告：無法從檔名 '{filename}' 中提取十六進制 Unicode 值。")
+                continue
+        else: # filename_source == 'char'
+            unicode_int = ord(filename.replace(".svg", ""))
 
-        debug = False       # online
+        svg_filepath = os.path.join(svg_path, filename)
+
+        debug = False
         #debug = True
 
         if debug:
-            print("-"*20)
-            print("glyph originalgid:", glyph.originalgid)
-            print("glyph unicode:", unicode_int)
-            print("glyph altuni:", glyph.altuni)
-            print("glyph char:", chr(unicode_int))
-
+            print("-" * 20)
             print("svg path:", svg_filepath)
             print("filename:", filename)
-            print("filename_variable:", filename_variable)
+            print("unicode_int:", unicode_int)
+            print("char:", chr(unicode_int))
 
+        try:
+            # 檢查字形是否存在
+            myfont.selection.all()
+            all_glyph_list = list(myfont.selection.byGlyphs)
+            glyph_exists = False
+            for glyph in all_glyph_list:
+                if glyph.unicode == unicode_int:
+                    existing_glyph = glyph
+                    glyph_exists = True
+                    break
 
-        if not exists(svg_filepath):
-            if not glyph.altuni is None:
-                for altuni_tuple in glyph.altuni:
-                    #print("glyph altuni_tuple:", altuni_tuple)
-                    unicode_value = 0
-                    try:
-                        (unicode_value, variation_selector, reserved_field) = altuni_tuple
-                    except Exception as exc:
-                        #print("glyph altuni:", glyph.altuni)
-                        print(exc)
-                        pass
-
-                    if unicode_value > 0:
-                        #print("glyph unicode_value:", unicode_value)
-                        filename=filename_pattern % (str(unicode_value))
-                        svg_filepath = os.path.join(svg_path,filename)
-                        #print("new svg path:", svg_filepath)
-                        if exists(svg_filepath):
-                            break
-
-        if exists(svg_filepath):
-            if debug:
-                print("found matched svg path: %s" % (svg_filepath) )
-
-            try:
+            if glyph_exists:
+                glyph = myfont[unicode_int]
                 glyph.clear()
                 glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
-                glyph.width = current_glyph_width
-                
+                glyph.width = existing_glyph.width # 從現有字形讀取寬度
                 import_char_list.add(glyph.originalgid)
-            except Exception as exc:
-                fail_char_list.add(unicode_int)
-                print("error svg path:", svg_filepath)
-                print(exc)
-                pass
+            else:
+                if debug:
+                    print(f"嘗試新增字形：Unicode {unicode_int} ({chr(unicode_int)})，檔案：{svg_filepath}")
+                myfont.createChar(unicode_int)
+                glyph = myfont[unicode_int]
+                glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
+                glyph.width = width # 從 args 中獲取寬度
+                import_char_list.add(glyph.originalgid)
+                if debug:
+                    print(f"成功新增字形：Unicode {unicode_int} ({chr(unicode_int)})")
+
+        except Exception as fontforge_exc:
+            print(f"FontForge 錯誤：Unicode {unicode_int}，檔案：{svg_filepath}，錯誤訊息：{fontforge_exc}")
+            fail_char_list.add(unicode_int)
+            pass
 
         if idx % 1000 == 0:
             print("Processing glyph: %d" % (idx))
 
     print("Imported count:", len(import_char_list))
-    #print("Imported text:", formated_imported_text)
     if len(fail_char_list) > 0:
         print("Failed count:", len(fail_char_list))
         print("Failed char:", fail_char_list)
@@ -227,9 +197,6 @@ def cli():
         action='store_true'
         )
 
-    parser.add_argument('--begin', type=int, default=0)
-    parser.add_argument('--end', type=int, default=99999)
-
     # font config.
     parser.add_argument("--comment",
         help="A comment associated with the font. Can be anything.",
@@ -261,6 +228,10 @@ def cli():
         default="",
         type=str)
 
+    parser.add_argument("--width",
+                        help="字形寬度，預設值為 1000",
+                        type=int,
+                        default=1000)
 
     args = parser.parse_args()
 
