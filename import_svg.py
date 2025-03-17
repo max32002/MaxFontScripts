@@ -132,8 +132,7 @@ def import_svg(myfont, svg_path, filename_pattern, filename_source, scale, simpl
             else:
                 if debug:
                     print(f"嘗試新增字形：Unicode {unicode_int} ({chr(unicode_int)})，檔案：{svg_filepath}")
-                myfont.createChar(unicode_int)
-                glyph = myfont[unicode_int]
+                glyph = myfont.createChar(unicode_int)
                 glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
                 glyph.width = width # 從 args 中獲取寬度
                 import_char_list.add(glyph.originalgid)
