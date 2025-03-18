@@ -3,7 +3,6 @@
 
 import argparse
 import platform
-import LibGlyph
 import os
 
 IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
@@ -17,19 +16,14 @@ def output_to_file(myfile, myfont_set):
     full_text = []
     for item in myfont_set:
         try:
-            #output_string = "%s(%s)" % (chr(item),str(hex(item))[2:])
             output_string = "%s" % (chr(item))
-            #output_string = "%s\n" % (chr(item))
-            #output_string = "%s " % (chr(item))
-            #output_string = '"%s",' % (chr(item))
             full_text.append(output_string)
         except Exception as exc:
             print("error item:%d" %(item))
             print("error item(hex):%s" %(str(hex(item))))
             raise
-            #pass
-    myfile.write(''.join(full_text))
 
+    myfile.write(''.join(full_text))
 
 def save_set_to_file(sorted_set, filename_output):
     outfile = None
@@ -47,36 +41,21 @@ def main(args):
     filename_output = args.output
     source_unicode_set = set()
 
-    if args.mode == "fontforge":
-        if not ".sfdir" in source_folder:
-            source_folder += ".sfdir"
-
-        # from 1 to 3.
-        #unicode_field = 2       # for Noto Sans
-        unicode_field = 2
-        
-        source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_folder, unicode_field)
-
-    if args.mode == "unicode_image":
-        target_folder_list = os.listdir(source_folder)
-        for filename in target_folder_list:
-            is_supported_image = False
-            if is_image_file(filename): 
-                is_supported_image = True
-            if is_supported_image:
-                #print("image file name", filename)
-                char_string = os.path.splitext(filename)[0]
-                if len(char_string) > 0:
-                    if char_string.isnumeric():
-                        #print("char_string", char_string)
-                        char_int = int(char_string)
-                        if char_int > 0 and char_int <= 65536:
-                            source_unicode_set.add(char_int)
+    target_folder_list = os.listdir(source_folder)
+    for filename in target_folder_list:
+        is_supported_image = False
+        if is_image_file(filename): 
+            is_supported_image = True
+        if is_supported_image:
+            char_string = os.path.splitext(filename)[0]
+            if len(char_string) > 0:
+                if char_string.isnumeric():
+                    char_int = int(char_string)
+                    if char_int > 0 and char_int <= 65536:
+                        source_unicode_set.add(char_int)
     
     if len(source_unicode_set) > 0:
         source_name = os.path.basename(os.path.normpath(source_folder))
-        if source_name.endswith(".sfdir"):
-            source_name = source_name[:len(source_name)-6]
         if filename_output == "output.txt":
             filename_output = "charset_%s.txt" % source_name
 
@@ -91,20 +70,15 @@ def main(args):
 
 def cli():
     parser = argparse.ArgumentParser(
-            description="get ttf chars list")
+            description="get ttf chars list from image files")
 
     parser.add_argument("--input",
-        help=".sfdir file path",
+        help="folder containing image files",
         type=str)
 
     parser.add_argument("--output",
         help=".txt file path",
         default="output.txt", 
-        type=str)
-    
-    parser.add_argument("--mode",
-        help="mode of folder",
-        default="fontforge", 
         type=str)
 
     args = parser.parse_args()
