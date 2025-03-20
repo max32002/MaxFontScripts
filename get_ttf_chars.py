@@ -1,112 +1,119 @@
 #!/usr/bin/env python3
-#encoding=utf-8
+# encoding=utf-8
 
 import argparse
 import platform
-import LibGlyph
 import os
+import logging
+from pathlib import Path
+from typing import Set, List
 
-IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
+try:
+    import fontforge
+except ImportError:
+    fontforge = None
 
-def is_image_file(filename):
-    _ , file_extension = os.path.splitext(filename)
-    file_extension = file_extension.upper()
+IMG_EXTENSIONS = {'.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF'}
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def is_image_file(filename: str) -> bool:
+    """檢查文件是否為圖像文件。 """
+    file_extension = Path(filename).suffix.upper()
     return file_extension in IMG_EXTENSIONS
 
-def output_to_file(myfile, myfont_set):
-    full_text = []
-    for item in myfont_set:
+def output_to_file(myfile, myfont_set: Set[int]) -> None:
+    """將字符集輸出到文件。 """
+    full_text: List[str] = []
+    for item in sorted(myfont_set):
         try:
-            #output_string = "%s(%s)" % (chr(item),str(hex(item))[2:])
-            output_string = "%s" % (chr(item))
-            #output_string = "%s\n" % (chr(item))
-            #output_string = "%s " % (chr(item))
-            #output_string = '"%s",' % (chr(item))
+            output_string = chr(item)
             full_text.append(output_string)
-        except Exception as exc:
-            print("error item:%d" %(item))
-            print("error item(hex):%s" %(str(hex(item))))
-            raise
-            #pass
+        except ValueError as exc:
+            logging.error(f"Error item: {item}, hex: {hex(item)}, error: {exc}")
     myfile.write(''.join(full_text))
 
+def save_set_to_file(sorted_set: Set[int], filename_output: str) -> None:
+    """將排序後的字符集保存到文件。 """
+    encoding = 'UTF-8' if platform.system() == 'Windows' else None
+    with open(filename_output, 'w', encoding=encoding) as outfile:
+        output_to_file(outfile, sorted_set)
 
-def save_set_to_file(sorted_set, filename_output):
-    outfile = None
-    if platform.system() == 'Windows':
-        outfile = open(filename_output, 'w', encoding='UTF-8')
-    else:
-        outfile = open(filename_output, 'w')
+def process_font_file(source_path: str, source_unicode_set: Set[int]) -> None:
+    """處理字體文件。 """
+    if fontforge is None:
+        logging.error("fontforge module is not installed.")
+        return
+    if any(source_path.endswith(ext) for ext in (".ttf", ".otf", ".woff", ".woff2")):
+        if os.path.exists(source_path):
+            try:
+                myfont = fontforge.open(source_path)
+                myfont.selection.all()
+                all_glyph_list = list(myfont.selection.byGlyphs)
+                for glyph in all_glyph_list:
+                    char_int = glyph.unicode
+                    if 0 < char_int <= 65536:
+                        source_unicode_set.add(char_int)
+            except Exception as e:
+                logging.error(f"Error processing font file: {source_path}, error: {e}")
+        else:
+            logging.error(f"File not found: {source_path}")
+    elif source_path.endswith(".sfdir"):
+        try:
+            import LibGlyph
+            unicode_field = 2
+            source_unicode_set.update(LibGlyph.load_files_to_set_dict(source_path, unicode_field)[0])
+        except Exception as e:
+            logging.error(f"Error processing sfdir: {source_path}, error: {e}")
 
-    output_to_file(outfile ,sorted_set)
-    outfile.close()
-    outfile = None
+def process_image_folder(source_path: str, source_unicode_set: Set[int]) -> None:
+    """處理圖像文件夾。 """
+    source_path_obj = Path(source_path)
+    if not source_path_obj.is_dir():
+        logging.error(f"Source path is not a directory: {source_path}")
+        return
+    for filename in os.listdir(source_path):
+        if is_image_file(filename):
+            char_string = Path(filename).stem
+            if char_string.isnumeric():
+                char_int = int(char_string)
+                if 0 < char_int <= 65536:
+                    source_unicode_set.add(char_int)
 
-def main(args):
-    source_folder = args.input
+def main(args: argparse.Namespace) -> None:
+    """主函數。 """
+    source_path = args.input
     filename_output = args.output
-    source_unicode_set = set()
+    source_unicode_set: Set[int] = set()
 
     if args.mode == "fontforge":
-        if not ".sfdir" in source_folder:
-            source_folder += ".sfdir"
-
-        # from 1 to 3.
-        #unicode_field = 2       # for Noto Sans
-        unicode_field = 2
-        
-        source_unicode_set, source_dict = LibGlyph.load_files_to_set_dict(source_folder, unicode_field)
-
-    if args.mode == "unicode_image":
-        target_folder_list = os.listdir(source_folder)
-        for filename in target_folder_list:
-            is_supported_image = False
-            if is_image_file(filename): 
-                is_supported_image = True
-            if is_supported_image:
-                #print("image file name", filename)
-                char_string = os.path.splitext(filename)[0]
-                if len(char_string) > 0:
-                    if char_string.isnumeric():
-                        #print("char_string", char_string)
-                        char_int = int(char_string)
-                        if char_int > 0 and char_int <= 65536:
-                            source_unicode_set.add(char_int)
-    
-    if len(source_unicode_set) > 0:
-        source_name = os.path.basename(os.path.normpath(source_folder))
-        if source_name.endswith(".sfdir"):
-            source_name = source_name[:len(source_name)-6]
-        if filename_output == "output.txt":
-            filename_output = "charset_%s.txt" % source_name
-
-        sorted_set=sorted(source_unicode_set)
-        save_set_to_file(sorted_set, filename_output)
-
-        print("input:", source_folder)
-        print("output:", filename_output)
-        print("charset length:", len(sorted_set))
+        process_font_file(source_path, source_unicode_set)
+    elif args.mode == "unicode_image":
+        process_image_folder(source_path, source_unicode_set)
     else:
-        print("source folder is empty!")
+        logging.error(f"Invalid mode: {args.mode}")
+        return
 
-def cli():
-    parser = argparse.ArgumentParser(
-            description="get ttf chars list")
+    if source_unicode_set:
+        source_name = Path(source_path).name
+        if source_name.endswith(".sfdir"):
+            source_name = source_name[:-6]
+        if filename_output == "output.txt":
+            filename_output = f"charset_{source_name}.txt"
 
-    parser.add_argument("--input",
-        help=".sfdir file path",
-        type=str)
+        save_set_to_file(source_unicode_set, filename_output)
+        logging.info(f"Input: {source_path}")
+        logging.info(f"Output: {filename_output}")
+        logging.info(f"Charset length: {len(source_unicode_set)}")
+    else:
+        logging.warning("Source folder is empty!")
 
-    parser.add_argument("--output",
-        help=".txt file path",
-        default="output.txt", 
-        type=str)
-    
-    parser.add_argument("--mode",
-        help="mode of folder",
-        default="fontforge", 
-        type=str)
-
+def cli() -> None:
+    """命令行界面。 """
+    parser = argparse.ArgumentParser(description="get ttf chars list")
+    parser.add_argument("--input", help=".otf / .ttf / .sfdir file path or image folder path", type=str)
+    parser.add_argument("--output", help=".txt file path", default="output.txt", type=str)
+    parser.add_argument("--mode", help="mode of folder (fontforge or unicode_image)", default="fontforge", type=str)
     args = parser.parse_args()
     main(args)
 
