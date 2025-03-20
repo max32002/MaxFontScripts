@@ -6,7 +6,7 @@ import shutil
 import argparse
 import platform
 
-IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF']
+IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF', '.SVG']
 
 def is_image_file(filename):
     _ , file_extension = os.path.splitext(filename)
