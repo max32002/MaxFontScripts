@@ -51,7 +51,7 @@ def main(args):
             if len(char_string) > 0:
                 if char_string.isnumeric():
                     char_int = int(char_string)
-                    if char_int > 0 and char_int <= 65536:
+                    if char_int > 0 and char_int < 0x110000:
                         source_unicode_set.add(char_int)
     
     if len(source_unicode_set) > 0:

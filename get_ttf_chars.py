@@ -52,7 +52,7 @@ def process_font_file(source_path: str, source_unicode_set: Set[int]) -> None:
                 all_glyph_list = list(myfont.selection.byGlyphs)
                 for glyph in all_glyph_list:
                     char_int = glyph.unicode
-                    if 0 < char_int <= 65536:
+                    if char_int > 0 and char_int < 0x110000:
                         source_unicode_set.add(char_int)
             except Exception as e:
                 logging.error(f"Error processing font file: {source_path}, error: {e}")
@@ -77,7 +77,7 @@ def process_image_folder(source_path: str, source_unicode_set: Set[int]) -> None
             char_string = Path(filename).stem
             if char_string.isnumeric():
                 char_int = int(char_string)
-                if 0 < char_int <= 65536:
+                if char_int > 0 and char_int < 0x110000:
                     source_unicode_set.add(char_int)
 
 def main(args: argparse.Namespace) -> None:

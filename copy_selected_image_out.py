@@ -98,7 +98,7 @@ def copy_out(args):
                     if char_string.isnumeric():
                         #print("char_string", char_string)
                         char_int = int(char_string)
-                        if char_int > 0 and char_int <= 65536:
+                        if char_int > 0 and char_int < 0x110000:
                             source_unicode_set.add(char_int)
                             source_dict[char_int]=filename
 
