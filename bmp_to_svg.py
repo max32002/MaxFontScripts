@@ -1,125 +1,142 @@
 #!/usr/bin/env python3
-#encoding=utf-8
-# https://github.com/scour-project/scour
-# pip install scour
 import argparse
 import os
 import subprocess
 import concurrent.futures
 import platform
+import pathlib
+import shutil
+import logging
+import cv2
+
+def check_potrace(potrace_path):
+    """檢查 potrace 是否存在。如果不存在，則引發異常。"""
+    if shutil.which(potrace_path) is None:
+        raise FileNotFoundError(f"potrace not found at: {potrace_path}")
+
+def convert_image_to_pbm(input_path, output_path):
+    """使用 OpenCV 將圖像轉換為 PBM 格式。"""
+    try:
+        image = cv2.imread(str(input_path), cv2.IMREAD_GRAYSCALE)
+        cv2.imwrite(str(output_path), image)
+        logging.info(f"Converted {input_path} to PBM: {output_path}")
+        return True
+    except Exception as e:
+        logging.error(f"Error converting {input_path} to PBM: {e}")
+        return False
+
+def convert_image_to_svg(potrace_path, input_path, output_path, cwd):
+    """將單個圖像檔案轉換為 SVG。"""
+    cmd_arguments = [
+        potrace_path,
+        '-b', 'svg',
+        '-u', '60',
+        str(input_path),
+        '-o', str(output_path),
+    ]
+
+    try:
+        subprocess.run(cmd_arguments, cwd=cwd, check=True, capture_output=True)
+        logging.info(f"Converted {input_path} to {output_path}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error converting {input_path}: {e.stderr.decode()}")
+        return False
+    except FileNotFoundError:
+        logging.error(f"potrace not found at {potrace_path}.")
+        return False
 
 def main(args):
-    from_folder = args.input
-    to_folder = args.output
-    multi_thread = True
-    if args.single_thread:
-        multi_thread = False
+    """主函數，用於批次轉換圖像檔案。"""
 
-    if len(to_folder) == 0:
-        to_folder = from_folder
-    print("From folder:", from_folder)
-    print("To folder:", to_folder)
+    from_folder = pathlib.Path(args.input)
+    to_folder = pathlib.Path(args.output) if args.output else from_folder
+    multi_thread = not args.single_thread
+    cwd = pathlib.Path(args.cwd) if args.cwd else pathlib.Path.cwd()
+    potrace_path = args.potrace
 
-    cmd_list = []
-    idx=0
-    convert_count=0
-    
-    filename_list = []
-    target_folder_list = os.listdir(from_folder)
-    print("Total file in from folder:", len(target_folder_list))
-    
-    working_dir = os.getcwd()
-    print("Working folder:", working_dir)
+    logging.info(f"From folder: {from_folder}")
+    logging.info(f"To folder: {to_folder}")
+    logging.info(f"Working folder: {cwd}")
+    logging.info(f"Using potrace: {potrace_path}")
+    logging.info(f"Multi-thread: {multi_thread}")
 
-    if not args.cwd is None:
-        working_dir = args.cwd
-        print("Assigned Working folder:", working_dir)
+    check_potrace(potrace_path)
 
-    for filename in target_folder_list:
-        is_supported_image = False
-        if filename.endswith(".bmp") or filename.endswith(".pbm") or filename.endswith(".pgm") or filename.endswith(".ppm"): 
-            is_supported_image = True
-        if is_supported_image:
-            filename_list.append(filename)
+    if not from_folder.exists() or not from_folder.is_dir():
+        logging.error(f"Input folder not found: {from_folder}")
+        return
 
-    for filename in filename_list:
-        idx+=1
-        #print("convert filename:", name)
-        from_svg_path = os.path.join(from_folder, filename)
-        filename_main = os.path.splitext(os.path.basename(filename))[0]
-        to_svg_path = os.path.join(to_folder, filename_main + ".svg")
-        shell_cmd = args.potrace + ' -b svg -u 60 %s -o %s' % (from_svg_path, to_svg_path)
-        #print("shell_cmd:", shell_cmd)
-        
-        cmd_argument = []
-        cmd_argument.append('-b')
-        cmd_argument.append('svg')
-        cmd_argument.append('-u')
-        cmd_argument.append('60')
-        cmd_argument.append(from_svg_path)
-        cmd_argument.append('-o')
-        cmd_argument.append(to_svg_path)
+    if not to_folder.exists():
+        logging.info(f"Output folder not found, creating {to_folder}")
+        to_folder.mkdir(parents=True, exist_ok=True)
+    elif not to_folder.is_dir():
+        logging.error(f"Output path is not a directory: {to_folder}")
+        return
 
-        if not multi_thread:
-            # single thread
-            if platform.system() == 'Linux':
-                cmd_array = [args.potrace] + cmd_argument
-                s=subprocess.Popen(cmd_array, cwd=args.cwd)
-            else:
-                subprocess.call(shell_cmd, cwd=args.cwd)
-                #subprocess.Popen(shell_cmd, shell=True)
-        convert_count+=1
+    supported_extensions = {'.bmp', '.pbm', '.pgm', '.ppm'}
+    image_files = [f for f in from_folder.iterdir() if f.is_file()]
 
-        # multi thread
-        cmd_list.append(shell_cmd)
-        
-        if idx % 1000 == 0:
-            # single thread
-            #print("Processing svg: %d" % (idx))
-            pass
+    logging.info(f"Total files in from folder: {len(image_files)}")
+
+    files_to_convert = []
+    temp_pbm_files = []
+
+    for image_file in image_files:
+        if image_file.suffix.lower() in supported_extensions:
+            files_to_convert.append(image_file)
+        else:
+            temp_pbm_path = from_folder / f"{image_file.stem}.pbm"
+            if convert_image_to_pbm(image_file, temp_pbm_path):
+                files_to_convert.append(temp_pbm_path)
+                temp_pbm_files.append(temp_pbm_path)
 
     if multi_thread:
-        # multi thread
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.map(subprocess.call, cmd_list)
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    convert_image_to_svg,
+                    potrace_path,
+                    image_file,
+                    to_folder / f"{image_file.stem}.svg",
+                    cwd,
+                )
+                for image_file in files_to_convert
+            ]
+            concurrent.futures.wait(futures)
+    else:
+        for image_file in files_to_convert:
+            convert_image_to_svg(
+                potrace_path,
+                image_file,
+                to_folder / f"{image_file.stem}.svg",
+                cwd,
+            )
 
-    print("Convert file count: %d\n" % (convert_count))
+    # 刪除臨時 PBM 檔案
+    for temp_pbm_file in temp_pbm_files:
+        temp_pbm_file.unlink()
+        logging.info(f"Deleted temporary file: {temp_pbm_file}")
+
+    logging.info("Conversion complete.")
 
 def cli():
+    """解析命令行參數。"""
     parser = argparse.ArgumentParser(
-            description="batch convert svg from source folder to target folder")
+        description="Batch convert images to SVG using potrace."
+    )
+    parser.add_argument("--input", required=True, help="Source folder")
+    parser.add_argument("--output", help="Target folder", default="")
+    parser.add_argument("--single_thread", action="store_true", help="Run in single-thread mode")
+    parser.add_argument("--cwd", help="Working directory", default=str(pathlib.Path.cwd()))
+    parser.add_argument("--potrace", help="Path to potrace executable", default="potrace")
 
-    parser.add_argument("--input",
-        help="source folder",
-        type=str)
-
-    parser.add_argument("--output",
-        help="target folder",
-        default="", 
-        type=str)
-
-    parser.add_argument('--single_thread', action='store_true')
-
-    parser.add_argument('--cwd', type=str)
-    parser.add_argument('--potrace', type=str, default='potrace')
-
-    
     args = parser.parse_args()
 
-    pass_precheck = True
-    
-    if not os.path.exists(args.input):
-        pass_precheck = False
-        print("input folder not found: %s" % (args.input))
+    # 配置 logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-    if not os.path.exists(args.output):
-        #pass_precheck = False
-        #print("output folder not found: %s" % (args.output))
-        if not os.path.isdir(args.output):
-            os.mkdir(args.output)
-
-    if pass_precheck:
-        main(args)
+    main(args)
 
 if __name__ == "__main__":
     cli()
