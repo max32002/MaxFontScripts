@@ -13,24 +13,17 @@ try:
 except ImportError:
     fontforge = None
 
-IMG_EXTENSIONS = {'.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF'}
+IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.tif', '.tiff', '.svg'}
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def is_image_file(filename: str) -> bool:
     """檢查文件是否為圖像文件。 """
-    file_extension = Path(filename).suffix.upper()
-    return file_extension in IMG_EXTENSIONS
+    return Path(filename).suffix.lower() in IMG_EXTENSIONS
 
 def output_to_file(myfile, myfont_set: Set[int]) -> None:
     """將字符集輸出到文件。 """
-    full_text: List[str] = []
-    for item in sorted(myfont_set):
-        try:
-            output_string = chr(item)
-            full_text.append(output_string)
-        except ValueError as exc:
-            logging.error(f"Error item: {item}, hex: {hex(item)}, error: {exc}")
+    full_text: List[str] = [chr(item) for item in sorted(myfont_set) if 0 <= item < 0x110000]
     myfile.write(''.join(full_text))
 
 def save_set_to_file(sorted_set: Set[int], filename_output: str) -> None:
@@ -44,27 +37,22 @@ def process_font_file(source_path: str, source_unicode_set: Set[int]) -> None:
     if fontforge is None:
         logging.error("fontforge module is not installed.")
         return
-    if any(source_path.endswith(ext) for ext in (".ttf", ".otf", ".woff", ".woff2")):
-        if os.path.exists(source_path):
-            try:
-                myfont = fontforge.open(source_path)
-                myfont.selection.all()
-                all_glyph_list = list(myfont.selection.byGlyphs)
-                for glyph in all_glyph_list:
-                    char_int = glyph.unicode
-                    if char_int > 0 and char_int < 0x110000:
-                        source_unicode_set.add(char_int)
-            except Exception as e:
-                logging.error(f"Error processing font file: {source_path}, error: {e}")
-        else:
-            logging.error(f"File not found: {source_path}")
-    elif source_path.endswith(".sfdir"):
-        try:
+
+    if not os.path.exists(source_path):
+        logging.error(f"File not found: {source_path}")
+        return
+
+    try:
+        if source_path.endswith((".ttf", ".otf", ".woff", ".woff2")):
+            myfont = fontforge.open(source_path)
+            myfont.selection.all()
+            all_glyph_list = list(myfont.selection.byGlyphs)
+            source_unicode_set.update(glyph.unicode for glyph in all_glyph_list if 0 <= glyph.unicode < 0x110000)
+        elif source_path.endswith(".sfdir"):
             import LibGlyph
-            unicode_field = 2
-            source_unicode_set.update(LibGlyph.load_files_to_set_dict(source_path, unicode_field)[0])
-        except Exception as e:
-            logging.error(f"Error processing sfdir: {source_path}, error: {e}")
+            source_unicode_set.update(LibGlyph.load_files_to_set_dict(source_path, 2)[0])
+    except Exception as e:
+        logging.error(f"Error processing font file: {source_path}, error: {e}")
 
 def process_image_folder(source_path: str, source_unicode_set: Set[int]) -> None:
     """處理圖像文件夾。 """
@@ -72,13 +60,12 @@ def process_image_folder(source_path: str, source_unicode_set: Set[int]) -> None
     if not source_path_obj.is_dir():
         logging.error(f"Source path is not a directory: {source_path}")
         return
+
     for filename in os.listdir(source_path):
         if is_image_file(filename):
             char_string = Path(filename).stem
-            if char_string.isnumeric():
-                char_int = int(char_string)
-                if char_int > 0 and char_int < 0x110000:
-                    source_unicode_set.add(char_int)
+            if char_string.isnumeric() and 0 <= int(char_string) < 0x110000:
+                source_unicode_set.add(int(char_string))
 
 def main(args: argparse.Namespace) -> None:
     """主函數。 """
@@ -98,8 +85,7 @@ def main(args: argparse.Namespace) -> None:
         source_name = Path(source_path).name
         if source_name.endswith(".sfdir"):
             source_name = source_name[:-6]
-        if filename_output == "output.txt":
-            filename_output = f"charset_{source_name}.txt"
+        filename_output = f"charset_{source_name}.txt" if filename_output == "output.txt" else filename_output
 
         save_set_to_file(source_unicode_set, filename_output)
         logging.info(f"Input: {source_path}")

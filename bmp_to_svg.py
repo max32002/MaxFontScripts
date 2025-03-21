@@ -75,6 +75,7 @@ def main(args):
         return
 
     supported_extensions = {'.bmp', '.pbm', '.pgm', '.ppm'}
+    opencv_supported_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.tif', '.tiff'}
     image_files = [f for f in from_folder.iterdir() if f.is_file()]
 
     logging.info(f"Total files in from folder: {len(image_files)}")
@@ -85,11 +86,13 @@ def main(args):
     for image_file in image_files:
         if image_file.suffix.lower() in supported_extensions:
             files_to_convert.append(image_file)
-        else:
+        elif image_file.suffix.lower() in opencv_supported_extensions:
             temp_pbm_path = from_folder / f"{image_file.stem}.pbm"
             if convert_image_to_pbm(image_file, temp_pbm_path):
                 files_to_convert.append(temp_pbm_path)
                 temp_pbm_files.append(temp_pbm_path)
+        else :
+            logging.info(f"file: {image_file} is not supported.")
 
     if multi_thread:
         with concurrent.futures.ProcessPoolExecutor() as executor:

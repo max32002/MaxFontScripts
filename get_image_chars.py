@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 #encoding=utf-8
-
 import argparse
 import platform
 import os
 
-IMG_EXTENSIONS = ['.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.BMP', '.TIF', '.TIFF', '.SVG']
-
-def is_image_file(filename):
-    _ , file_extension = os.path.splitext(filename)
-    file_extension = file_extension.upper()
-    return file_extension in IMG_EXTENSIONS
+IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.tif', '.tiff', '.svg'}
 
 def output_to_file(myfile, myfont_set):
     full_text = []
@@ -43,17 +37,18 @@ def main(args):
 
     target_folder_list = os.listdir(source_folder)
     for filename in target_folder_list:
-        is_supported_image = False
-        if is_image_file(filename): 
-            is_supported_image = True
-        if is_supported_image:
-            char_string = os.path.splitext(filename)[0]
-            if len(char_string) > 0:
-                if char_string.isnumeric():
-                    char_int = int(char_string)
-                    if char_int > 0 and char_int < 0x110000:
-                        source_unicode_set.add(char_int)
-    
+        file_path = os.path.join(source_folder, filename)
+        if os.path.isfile(file_path): # check if file
+            _, file_extension = os.path.splitext(filename)
+            file_extension = file_extension.lower()
+            if file_extension in IMG_EXTENSIONS:
+                char_string = os.path.splitext(filename)[0]
+                if len(char_string) > 0:
+                    if char_string.isnumeric():
+                        char_int = int(char_string)
+                        if char_int > 0 and char_int < 0x110000:
+                            source_unicode_set.add(char_int)
+
     if len(source_unicode_set) > 0:
         source_name = os.path.basename(os.path.normpath(source_folder))
         if filename_output == "output.txt":
@@ -66,11 +61,11 @@ def main(args):
         print("output:", filename_output)
         print("charset length:", len(sorted_set))
     else:
-        print("source folder is empty!")
+        print("source folder is empty or no supported image files!")
 
 def cli():
     parser = argparse.ArgumentParser(
-            description="get ttf chars list from image files")
+        description="get ttf chars list from image files")
 
     parser.add_argument("--input",
         help="folder containing image files",
@@ -78,7 +73,7 @@ def cli():
 
     parser.add_argument("--output",
         help=".txt file path",
-        default="output.txt", 
+        default="output.txt",
         type=str)
 
     args = parser.parse_args()
