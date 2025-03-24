@@ -2,7 +2,7 @@ import argparse
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64, font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0, save=False, reverse=False, output_dir="comparison_images"):
+def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64, font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0, save=False, reverse=False, output_dir="comparison_images", detail=False):
     """
     比較兩個字型在顯示文字上的差異百分比，並將結果輸出到文件中。
 
@@ -19,6 +19,7 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
         save (bool): 是否儲存左右對照圖，預設為 False。
         reverse (bool): 是否反轉左右對照圖的左右位置，預設為 False。
         output_dir (str): 對照圖的輸出目錄，預設為 comparison_images。
+        detail (bool): 是否輸出詳細的四個象限差異百分比，預設為 False。
 
     Returns:
         float: 所有字元的平均差異百分比。
@@ -49,15 +50,47 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
             # 計算像素差異
             diff_pixels = 0
             total_pixels = image1.width * image1.height
+            diff_percentages = {
+                "total": 0,
+                "top_left": 0,
+                "top_right": 0,
+                "bottom_left": 0,
+                "bottom_right": 0,
+            }
+            pixel_counts = {
+                "total": total_pixels,
+                "top_left": (image1.width // 2) * (image1.height // 2),
+                "top_right": (image1.width // 2) * (image1.height // 2),
+                "bottom_left": (image1.width // 2) * (image1.height // 2),
+                "bottom_right": (image1.width // 2) * (image1.height // 2),
+            }
             for x in range(image1.width):
                 for y in range(image1.height):
                     if image1.getpixel((x, y)) != image2.getpixel((x, y)):
                         diff_pixels += 1
+                        if x < image1.width // 2 and y < image1.height // 2:
+                            diff_percentages["top_left"] += 1
+                        elif x >= image1.width // 2 and y < image1.height // 2:
+                            diff_percentages["top_right"] += 1
+                        elif x < image1.width // 2 and y >= image1.height // 2:
+                            diff_percentages["bottom_left"] += 1
+                        else:
+                            diff_percentages["bottom_right"] += 1
 
             # 計算差異百分比
-            diff_percentage = (diff_pixels / total_pixels) * 100
-            total_diff_percentage += diff_percentage
-            results.append(f"字元 '{char}' 的差異百分比：{diff_percentage:.2f}%")
+            diff_percentages["total"] = (diff_pixels / total_pixels) * 100
+            diff_percentages["top_left"] = (diff_percentages["top_left"] / pixel_counts["top_left"]) * 100
+            diff_percentages["top_right"] = (diff_percentages["top_right"] / pixel_counts["top_right"]) * 100
+            diff_percentages["bottom_left"] = (diff_percentages["bottom_left"] / pixel_counts["bottom_left"]) * 100
+            diff_percentages["bottom_right"] = (diff_percentages["bottom_right"] / pixel_counts["bottom_right"]) * 100
+
+            total_diff_percentage += diff_percentages["total"]
+            results.append(f"字元 '{char}' 的差異百分比：整體 {diff_percentages['total']:.2f}%")
+            if detail:
+                results.append(f"  左上 1/4：{diff_percentages['top_left']:.2f}%")
+                results.append(f"  右上 1/4：{diff_percentages['top_right']:.2f}%")
+                results.append(f"  左下 1/4：{diff_percentages['bottom_left']:.2f}%")
+                results.append(f"  右下 1/4：{diff_percentages['bottom_right']:.2f}%")
 
             # 儲存左右對照圖
             if save:
@@ -106,8 +139,9 @@ if __name__ == "__main__":
     parser.add_argument("--save", action="store_true", help="儲存左右對照圖。")
     parser.add_argument("--reverse", action="store_true", help="反轉左右對照圖的左右位置。")
     parser.add_argument("--output_dir", type=str, default="comparison_images", help="對照圖的輸出目錄，預設為 comparison_images。")
+    parser.add_argument("--detail", action="store_true", help="過濾重複的雜湊值。")
     args = parser.parse_args()
 
-    average_diff = compare_fonts(args.font1, args.font2, args.file, args.output_file, args.size, args.font1_x_offset, args.font1_y_offset, args.font2_x_offset, args.font2_y_offset, args.save, args.reverse, args.output_dir)
+    average_diff = compare_fonts(args.font1, args.font2, args.file, args.output_file, args.size, args.font1_x_offset, args.font1_y_offset, args.font2_x_offset, args.font2_y_offset, args.save, args.reverse, args.output_dir, args.detail)
     if average_diff is not None:
         print(f"所有字元的平均差異百分比：{average_diff:.2f}%")
