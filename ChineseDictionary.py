@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 
@@ -66,20 +67,29 @@ class ChineseDictionary:
         """取得中文字的左右部件"""
         return self.data.get(char, {}).get("component", {})
 
-# 測試用例
+def get_character_info(keyword):
+    dictionary = ChineseDictionary()  # 不帶入參數到物件, 預設使用完整版
+
+    if keyword in dictionary.data:  # 檢查keyword是否存在於字典
+        char = keyword
+        print(f"『{char}』的 Unicode（十進制）: {dictionary.unicode(char)}")
+        print(f"『{char}』的 Unicode（十六進制）: {dictionary.unicode_hex(char)}")
+        print(f"『{char}』的部首: {dictionary.radical(char)}")
+        print(f"『{char}』的部首筆畫數: {dictionary.radical_count(char)}")
+        print(f"『{char}』的非部首筆畫數: {dictionary.strokes_count(char)}")
+        print(f"『{char}』的總筆畫數: {dictionary.strokes_total(char)}")
+        print(f"『{char}』的異體字: {dictionary.alternate(char)}")
+        print(f"『{char}』的語義變體: {dictionary.semantic_variant(char)}")
+        print(f"『{char}』的普通話拼音: {dictionary.pronunciation_mandarin(char)}")
+        print(f"『{char}』的粵語拼音: {dictionary.pronunciation_cantonese(char)}")
+        print(f"『{char}』的閩南語拼音: {dictionary.pronunciation_southern_min(char)}")
+        print(f"『{char}』的組件: {dictionary.component(char)}")
+    else:
+        print(f"找不到字元：{keyword}")
+
 if __name__ == "__main__":
-    dictionary = ChineseDictionary(lite=True)  # 使用精簡版
-    char = "姚"
-    
-    print(f"『{char}』的 Unicode（十進制）: {dictionary.unicode(char)}")
-    print(f"『{char}』的 Unicode（十六進制）: {dictionary.unicode_hex(char)}")
-    print(f"『{char}』的部首: {dictionary.radical(char)}")
-    print(f"『{char}』的部首筆畫數: {dictionary.radical_count(char)}")
-    print(f"『{char}』的非部首筆畫數: {dictionary.strokes_count(char)}")
-    print(f"『{char}』的總筆畫數: {dictionary.strokes_total(char)}")
-    print(f"『{char}』的異體字: {dictionary.alternate(char)}")
-    print(f"『{char}』的語義變體: {dictionary.semantic_variant(char)}")
-    print(f"『{char}』的普通話拼音: {dictionary.pronunciation_mandarin(char)}")
-    print(f"『{char}』的粵語拼音: {dictionary.pronunciation_cantonese(char)}")
-    print(f"『{char}』的閩南語拼音: {dictionary.pronunciation_southern_min(char)}")
-    print(f"『{char}』的組件: {dictionary.component(char)}")
+    parser = argparse.ArgumentParser(description="查詢中文字元資訊")
+    parser.add_argument("--keyword", required=True, help="要查詢的字元")
+
+    args = parser.parse_args()
+    get_character_info(args.keyword)
