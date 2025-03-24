@@ -2,7 +2,10 @@ import argparse
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64, font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0, save=False, reverse=False, output_dir="comparison_images", detail=False, filename_rule="unicode_int"):
+def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64,
+                  font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0,
+                  save=False, reverse=False, output_dir="comparison_images", detail=False,
+                  filename_rule="unicode_int", canvas_size=100):
     """
     比較兩個字型在顯示文字上的差異百分比，並將結果輸出到文件中。
 
@@ -20,7 +23,7 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
         reverse (bool): 是否反轉左右對照圖的左右位置，預設為 False。
         output_dir (str): 對照圖的輸出目錄，預設為 comparison_images。
         detail (bool): 是否輸出詳細的四個象限差異百分比，預設為 False。
-
+        canvas_size (int): 比較圖片的畫布大小，預設為 100。
     Returns:
         float: 所有字元的平均差異百分比。
     """
@@ -39,13 +42,13 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
         results = []  # 儲存結果的列表
         for char in text:
             # 建立兩個字型顯示相同字元的圖片
-            image1 = Image.new('RGB', (100, 100), 'white')  # 調整圖片大小
+            image1 = Image.new('RGB', (canvas_size, canvas_size), 'white')  # 使用 canvas_size
             draw1 = ImageDraw.Draw(image1)
-            draw1.text((50 + font1_x_offset, 50 + font1_y_offset), char, font=font1, fill='black', anchor='mm')
+            draw1.text((canvas_size // 2 + font1_x_offset, canvas_size // 2 + font1_y_offset), char, font=font1, fill='black', anchor='mm')
 
-            image2 = Image.new('RGB', (100, 100), 'white')
+            image2 = Image.new('RGB', (canvas_size, canvas_size), 'white')
             draw2 = ImageDraw.Draw(image2)
-            draw2.text((50 + font2_x_offset, 50 + font2_y_offset), char, font=font2, fill='black', anchor='mm')
+            draw2.text((canvas_size // 2 + font2_x_offset, canvas_size // 2 + font2_y_offset), char, font=font2, fill='black', anchor='mm')
 
             # 計算像素差異
             diff_pixels = 0
@@ -97,14 +100,14 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
                 # 確保輸出目錄存在
                 os.makedirs(output_dir, exist_ok=True)
                 if reverse:
-                    comparison_image = Image.new('RGB', (200, 100), 'white')
+                    comparison_image = Image.new('RGB', (canvas_size * 2, canvas_size), 'white')  # 使用 canvas_size
                     comparison_image.paste(image2, (0, 0))
-                    comparison_image.paste(image1, (100, 0))
+                    comparison_image.paste(image1, (canvas_size, 0))
                 else:
-                    comparison_image = Image.new('RGB', (200, 100), 'white')
+                    comparison_image = Image.new('RGB', (canvas_size * 2, canvas_size), 'white')
                     comparison_image.paste(image1, (0, 0))
-                    comparison_image.paste(image2, (100, 0))
-                
+                    comparison_image.paste(image2, (canvas_size, 0))
+
                 image_filename = str(ord(char)) if filename_rule == "unicode_int" else f"{char}"
                 comparison_image.save(os.path.join(output_dir, f"{image_filename}.png"))
 
@@ -134,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="包含要比較文字的文字檔案路徑。")
     parser.add_argument("--output_file", help="輸出結果的檔案路徑。", default="compare_result.txt")
     parser.add_argument("-s", "--size", type=int, default=64, help="字型大小，預設為 64。")
+    parser.add_argument("--canvas_size", type=int, default=100, help="畫布大小，預設為 100。")
     parser.add_argument("--font1_x_offset", type=int, default=0, help="第一個字型 X 軸偏移量，預設為 0。")
     parser.add_argument("--font1_y_offset", type=int, default=0, help="第一個字型 Y 軸偏移量，預設為 0。")
     parser.add_argument("--font2_x_offset", type=int, default=0, help="第二個字型 X 軸偏移量，預設為 0。")
