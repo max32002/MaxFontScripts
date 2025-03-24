@@ -2,7 +2,7 @@ import argparse
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64, font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0, save=False, reverse=False, output_dir="comparison_images", detail=False):
+def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result.txt", font_size=64, font1_x_offset=0, font1_y_offset=0, font2_x_offset=0, font2_y_offset=0, save=False, reverse=False, output_dir="comparison_images", detail=False, filename_rule="unicode_int"):
     """
     比較兩個字型在顯示文字上的差異百分比，並將結果輸出到文件中。
 
@@ -104,7 +104,9 @@ def compare_fonts(font1_path, font2_path, text_file, output_file="compare_result
                     comparison_image = Image.new('RGB', (200, 100), 'white')
                     comparison_image.paste(image1, (0, 0))
                     comparison_image.paste(image2, (100, 0))
-                comparison_image.save(os.path.join(output_dir, f"{char}_comparison.png"))
+                
+                image_filename = str(ord(char)) if filename_rule == "unicode_int" else f"{char}"
+                comparison_image.save(os.path.join(output_dir, f"{image_filename}.png"))
 
         # 計算平均差異百分比
         average_diff_percentage = total_diff_percentage / len(text)
@@ -140,8 +142,9 @@ if __name__ == "__main__":
     parser.add_argument("--reverse", action="store_true", help="反轉左右對照圖的左右位置。")
     parser.add_argument("--output_dir", type=str, default="comparison_images", help="對照圖的輸出目錄，預設為 comparison_images。")
     parser.add_argument("--detail", action="store_true", help="過濾重複的雜湊值。")
+    parser.add_argument('--filename_rule', type=str, default="unicode_int", choices=['seq', 'char', 'unicode_int', 'unicode_hex'])
     args = parser.parse_args()
 
-    average_diff = compare_fonts(args.font1, args.font2, args.file, args.output_file, args.size, args.font1_x_offset, args.font1_y_offset, args.font2_x_offset, args.font2_y_offset, args.save, args.reverse, args.output_dir, args.detail)
+    average_diff = compare_fonts(args.font1, args.font2, args.file, args.output_file, args.size, args.font1_x_offset, args.font1_y_offset, args.font2_x_offset, args.font2_y_offset, args.save, args.reverse, args.output_dir, args.detail, args.filename_rule)
     if average_diff is not None:
         print(f"所有字元的平均差異百分比：{average_diff:.2f}%")
