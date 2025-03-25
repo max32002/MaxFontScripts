@@ -1,6 +1,8 @@
-import os
 import argparse
+import os
+
 from PIL import Image
+
 
 def crop_images(input_dir, output_dir="cropped_images", reverse=False):
     """

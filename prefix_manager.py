@@ -1,5 +1,6 @@
-import os
 import argparse
+import os
+
 
 def add_prefix(folder_path, prefix):
     """在指定目錄下的所有檔案名稱前新增前綴。"""

@@ -1,7 +1,9 @@
 import argparse
-from PIL import Image, ImageDraw, ImageFont
 import os
 import shutil
+
+from PIL import Image, ImageDraw, ImageFont
+
 
 def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False):
     """
