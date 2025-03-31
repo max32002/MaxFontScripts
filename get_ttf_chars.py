@@ -97,7 +97,7 @@ def main(args: argparse.Namespace) -> None:
 def cli() -> None:
     """命令行界面。 """
     parser = argparse.ArgumentParser(description="get ttf chars list")
-    parser.add_argument("--input", help=".otf / .ttf / .sfdir file path or image folder path", type=str)
+    parser.add_argument("input", help=".otf / .ttf / .sfdir file path or image folder path", type=str)
     parser.add_argument("--output", help=".txt file path", default="output.txt", type=str)
     parser.add_argument("--mode", help="mode of folder (fontforge or unicode_image)", default="fontforge", type=str)
     args = parser.parse_args()

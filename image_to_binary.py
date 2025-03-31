@@ -17,7 +17,7 @@ def convert_image_to_binary_gray(input_path, output_path, threshold=127, antiali
 
         _, binary_img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
         cv2.imwrite(output_path, binary_img)
-        logging.info(f"已轉換：{input_path} -> {output_path}")
+        #logging.info(f"已轉換：{input_path} -> {output_path}")
         return True
     except Exception as e:
         logging.error(f"轉換 {input_path} 時發生錯誤：{e}")
@@ -25,7 +25,7 @@ def convert_image_to_binary_gray(input_path, output_path, threshold=127, antiali
 
 def convert_images_in_directory(input_dir, output_dir=None, threshold=127, antialiasing=0):
     """轉換目錄中的所有圖片。"""
-    image_files = [f for f in os.listdir(input_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
+    image_files = [f for f in os.listdir(input_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.bmp', '.gif', '.tif', '.tiff'))]
 
     for filename in tqdm(image_files, desc="轉換進度"):
         input_path = os.path.join(input_dir, filename)

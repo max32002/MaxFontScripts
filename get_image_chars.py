@@ -4,7 +4,7 @@ import argparse
 import platform
 import os
 
-IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.tif', '.tiff', '.svg'}
+IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.gif', '.tif', '.tiff', '.svg', '.kra', '.psd'}
 
 def output_to_file(myfile, myfont_set):
     full_text = []
@@ -66,15 +66,8 @@ def main(args):
 def cli():
     parser = argparse.ArgumentParser(
         description="get ttf chars list from image files")
-
-    parser.add_argument("--input",
-        help="folder containing image files",
-        type=str)
-
-    parser.add_argument("--output",
-        help=".txt file path",
-        default="output.txt",
-        type=str)
+    parser.add_argument("input", help="輸入目錄路徑。")
+    parser.add_argument("--output", help=".txt file path", default="output.txt", type=str)
 
     args = parser.parse_args()
     main(args)
