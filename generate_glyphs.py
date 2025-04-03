@@ -1,8 +1,7 @@
-import argparse
 import os
 import shutil
 import logging
-
+import argparse
 from PIL import Image, ImageDraw, ImageFont
 
 # 設定日誌記錄
@@ -39,8 +38,7 @@ def draw_character(char, font, canvas_size, x_offset, y_offset, background_color
     """繪製單個字元圖像。"""
     image = Image.new('RGB', (canvas_size, canvas_size), background_color)
     draw = ImageDraw.Draw(image)
-    canvas_center = canvas_size // 2
-    draw.text((canvas_center + x_offset, canvas_center + y_offset), char, font=font, fill='black', anchor='mm')
+    draw.text((0 + x_offset, 0 + y_offset), char, (0, 0, 0), font=font)
 
     bbox = image.getbbox()
     if bbox is None:
@@ -61,7 +59,7 @@ def is_image_blank(image):
     else:
         return False
 
-def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False):
+def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False, disable_binary=False):
     """使用指定參數生成字元圖像。"""
     font = load_font(font_path, font_size)
     if font is None:
@@ -93,19 +91,52 @@ def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir
         except Exception as e:
             logging.warning(f"警告：讀取檔案時發生錯誤： {e}")
 
-    # 生成字元圖像
-    for i, char in enumerate(characters):
-        # 根據規則生成檔案名稱
-        filename = generate_filename(char, filename_rule, i)
+    # 去重並保持順序 (如果需要)
+    unique_characters = []
+    seen = set()
+    for char in characters:
+        if char not in seen:
+            unique_characters.append(char)
+            seen.add(char)
 
-        # 創建圖像
-        image = draw_character(char, font, canvas_size, x_offset, y_offset, background_color = 'white')
-        if image and not is_image_blank(image): # 檢查圖像是否為空白
+    if not unique_characters:
+        print("沒有有效的字元需要處理。")
+        return
+
+    print(f"準備生成 {len(unique_characters)} 個字元的圖像...")
+
+    # 生成字元圖像
+    saved_count = 0
+    skipped_count = 0
+    for i, char in enumerate(unique_characters):
+        filename = generate_filename(char, filename_rule, i)
+        output_path = os.path.join(output_dir, filename)
+
+        image_rgb = draw_character(char, font, canvas_size, x_offset, y_offset, background_color='white')
+
+        if image_rgb and not is_image_blank(image_rgb):
             try:
-                image.save(os.path.join(output_dir, filename))
+                image_binary = image_rgb
+                # 進行二極化轉換
+                if not disable_binary:
+                    image_binary = image_rgb.convert('1')
+
+                # 儲存二極化後的圖像
+                image_binary.save(output_path)
+                saved_count += 1
                 # logging.info(f'已儲存 {filename}')
             except Exception as e:
-                logging.warning(f"警告：儲存檔案 {filename} 時發生錯誤： {e}")
+                logging.warning(f"警告：處理或儲存檔案 {filename} (字元 '{char}') 時發生錯誤： {e}")
+                skipped_count += 1
+        else:
+            # 如果 draw_character 返回 None 或空白圖像，則跳過儲存
+            if char.isspace(): # 對於空白字符給出更明確的提示
+                 logging.info(f"提示：跳過空白字元 '{char}' (Unicode: {ord(char)}) 的圖像生成。")
+            else:
+                 logging.info(f"提示：跳過字元 '{char}' (Unicode: {ord(char)}) 的圖像生成，可能因為字型缺失或繪製結果為空白。")
+            skipped_count += 1
+
+    print(f"圖像生成完成。成功儲存 {saved_count} 個圖像，跳過 {skipped_count} 個圖像。")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='生成字元圖像。')
@@ -119,8 +150,22 @@ if __name__ == '__main__':
     parser.add_argument("--x_offset", type=int, default=0, help="字型 X 軸偏移量，預設為 0。")
     parser.add_argument("--y_offset", type=int, default=0, help="字型 Y 軸偏移量，預設為 0。")
     parser.add_argument("--clear", action="store_true", help="清除輸出目錄中的所有檔案。")
+    parser.add_argument("--disable_binary", action="store_true", help="停用二極化")
 
     args = parser.parse_args()
 
-    generate_glyph_images(args.keyword, args.font, args.font_size, args.canvas_size, args.output_dir, args.filename_rule, args.file, args.x_offset, args.y_offset, args.clear)
+    # 執行生成函數
+    generate_glyph_images(
+        keyword=args.keyword,
+        font_path=args.font,
+        font_size=args.font_size,
+        canvas_size=args.canvas_size,
+        output_dir=args.output_dir,
+        filename_rule=args.filename_rule,
+        file_path=args.file,
+        x_offset=args.x_offset,
+        y_offset=args.y_offset,
+        clear_output_dir=args.clear,
+        disable_binary=args.disable_binary
+    )
     print(f'字元圖像已儲存至 {args.output_dir}')
