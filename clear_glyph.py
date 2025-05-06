@@ -59,7 +59,7 @@ def clear_main(args):
     if exists(ff_path):
         myfont=fontforge.open(ff_path)
         myfont, cleared_char_list = clear_glyph(myfont, target_string, skip_alt)
-        print("Cleared count:", len(clear_char_list))
+        print("Cleared count:", len(cleared_char_list))
 
         if len(cleared_char_list) > 0:
             if export_as_font:

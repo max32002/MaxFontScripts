@@ -12,6 +12,9 @@ from torch import nn
 from torchvision import transforms
 from tqdm import tqdm
 
+def is_image_file(filename):
+    IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.gif', '.tif', '.tiff'}
+    return any(filename.lower().endswith(ext) for ext in IMG_EXTENSIONS)
 
 def draw_character(char, font, canvas_size, x_offset=0, y_offset=0, auto_fit=True):
     """渲染單個字元到圖像。"""
@@ -84,11 +87,18 @@ def create_example_image(char, source_image_dir, target_font, canvas_size, targe
     if hash(target_image.tobytes()) in filtered_hashes:
         return None
 
-    source_image_path = Path(source_image_dir) / f"{ord(char)}.png"
-    if source_image_path.exists():
-        source_image = Image.open(source_image_path)
+    source_image_path = Path(source_image_dir) / f"{ord(char)}.*"
+    source_image_files = [f for f in Path(source_image_dir).glob(f"{ord(char)}.*") if is_image_file(f.name)]
+
+    if source_image_files:
+        source_image_path = source_image_files[0]
+        try:
+            source_image = Image.open(source_image_path)
+        except Exception as e:
+            print(f"無法開啟源圖像：{source_image_path} - {e}")
+            return None
     else:
-        print(f"找不到源圖像：{source_image_path}")
+        print(f"找不到符合格式的源圖像：{Path(source_image_dir) / str(ord(char))}.({'|'.join(IMG_EXTENSIONS)})")
         return None
 
     font_x_position = canvas_size if reverse else 0
@@ -145,7 +155,7 @@ def main(args):
     if args.charset:
         charset = list(open(args.charset, encoding='utf-8').readline().strip())
     else:
-        charset = [chr(int(file.stem)) for file in source_image_dir.glob("*.png")]
+        charset = sorted(list(set([chr(int(file.stem)) for file in Path(source_image_dir).iterdir() if is_image_file(file.name)])))
 
     if args.shuffle:
         np.random.shuffle(charset)
