@@ -116,18 +116,22 @@ def import_svg(myfont, svg_path, filename_pattern, filename_source, scale, simpl
             # 檢查字形是否存在
             myfont.selection.all()
             all_glyph_list = list(myfont.selection.byGlyphs)
-            glyph_exists = False
+
+            existing_glyph = None
             for glyph in all_glyph_list:
                 if glyph.unicode == unicode_int:
                     existing_glyph = glyph
-                    glyph_exists = True
                     break
 
-            if glyph_exists:
-                glyph = myfont[unicode_int]
+            if existing_glyph:
+                #glyph = myfont[unicode_int]
+                previous_width = existing_glyph.width # 從現有字形讀取寬度
+                glyph = existing_glyph
+                if debug:
+                    print(f"glyph clear {unicode_int} ({chr(unicode_int)})，檔案：{svg_filepath}")
                 glyph.clear()
                 glyph.importOutlines(svg_filepath, scale=scale, simplify=simplify)
-                glyph.width = existing_glyph.width # 從現有字形讀取寬度
+                glyph.width = previous_width
                 import_char_list.add(glyph.originalgid)
             else:
                 if debug:

@@ -34,7 +34,7 @@ def process_sets(args):
         elif args.mode in ["intersect", "int", "&"]:
             print("excepted length of formated file:", len(input_charset & remove_charset))
 
-        print("length of target file:", len(target_set))
+        print("final length of target file:", len(target_set))
 
         if formated_charset:
             with open(args.output, 'w', encoding='utf-8') as outfile:

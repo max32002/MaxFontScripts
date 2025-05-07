@@ -32,7 +32,22 @@ def save_set_to_file(sorted_set: Set[int], filename_output: str) -> None:
     with open(filename_output, 'w', encoding=encoding) as outfile:
         output_to_file(outfile, sorted_set)
 
-def process_font_file(source_path: str, source_unicode_set: Set[int]) -> None:
+def get_unicode_codepoint(char):
+    if sys.maxunicode >= 0x10FFFF:
+        # 直接處理單一字元
+        return ord(char)
+    else:
+        # 針對 UCS-2 需要特別處理代理對
+        if len(char) == 2:
+            high, low = map(ord, char)
+            return (high - 0xD800) * 0x400 + (low - 0xDC00) + 0x10000
+        else:
+            return ord(char)
+
+def string_to_unicode_set(input_str):
+    return {get_unicode_codepoint(char) for char in input_str}
+
+def process_font_file(source_path: str, source_unicode_set: Set[int], altuni: bool, find_alt_text: str) -> None:
     """處理字體文件。 """
     if fontforge is None:
         logging.error("fontforge module is not installed.")
@@ -42,12 +57,43 @@ def process_font_file(source_path: str, source_unicode_set: Set[int]) -> None:
         logging.error(f"File not found: {source_path}")
         return
 
+    alt_root_unicode_dict = {}
+    find_alt_root = False
+    if altuni:
+        if len(find_alt_text) > 0:
+            find_alt_root = True
+            alt_unicode_set = string_to_unicode_set(find_alt_text)
+
     try:
         if source_path.endswith((".ttf", ".otf", ".woff", ".woff2")):
             myfont = fontforge.open(source_path)
             myfont.selection.all()
             all_glyph_list = list(myfont.selection.byGlyphs)
-            source_unicode_set.update(glyph.unicode for glyph in all_glyph_list if 0 <= glyph.unicode < 0x110000)
+            for glyph in all_glyph_list:
+                if 0 <= glyph.unicode < 0x110000:
+                    source_unicode_set.add(glyph.unicode)
+                    if altuni:
+                        if not glyph.altuni is None:
+                            for altuni_tuple in glyph.altuni:
+                                unicode_value = 0
+                                try:
+                                    (unicode_value, _, _) = altuni_tuple
+                                except Exception as exc:
+                                    #print("glyph altuni:", glyph.altuni)
+                                    print(exc)
+                                    pass
+
+                                if unicode_value > 0:
+                                    source_unicode_set.add(unicode_value)
+
+                                    if find_alt_root:
+                                        if unicode_value in alt_unicode_set:
+                                            alt_root_unicode_dict[unicode_value]=glyph.unicode
+
+            if find_alt_root:
+                print("alt_root_unicode_dict:", alt_root_unicode_dict)
+                source_unicode_set.clear()
+                source_unicode_set.update(alt_root_unicode_dict.values())
         elif source_path.endswith(".sfdir"):
             import LibGlyph
             source_unicode_set.update(LibGlyph.load_files_to_set_dict(source_path, 2)[0])
@@ -74,7 +120,7 @@ def main(args: argparse.Namespace) -> None:
     source_unicode_set: Set[int] = set()
 
     if args.mode == "fontforge":
-        process_font_file(source_path, source_unicode_set)
+        process_font_file(source_path, source_unicode_set, args.altuni, args.find_alt_text)
     elif args.mode == "unicode_image":
         process_image_folder(source_path, source_unicode_set)
     else:
@@ -100,6 +146,8 @@ def cli() -> None:
     parser.add_argument("input", help=".otf / .ttf / .sfdir file path or image folder path", type=str)
     parser.add_argument("--output", help=".txt file path", default="output.txt", type=str)
     parser.add_argument("--mode", help="mode of folder (fontforge or unicode_image)", default="fontforge", type=str)
+    parser.add_argument('--altuni', help='include altuni', action='store_true' )
+    parser.add_argument('--find_alt_text', help='alt list string', type=str, default="" )
     args = parser.parse_args()
     main(args)
 
