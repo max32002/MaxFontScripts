@@ -1,12 +1,12 @@
+import argparse
+import logging
 import os
 import shutil
-import logging
-import argparse
-from PIL import Image, ImageDraw, ImageFont
 
 import cv2  # OpenCV
+import freetype  # For TTF font handling
 import numpy as np
-import freetype # For TTF font handling
+from PIL import Image, ImageDraw, ImageFont
 
 # 設定日誌記錄
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,22 +25,22 @@ def load_font(font_path, font_size):
         return None
     return font
 
-def generate_filename(char, filename_rule, seq_num):
+def generate_filename(char, filename_rule, file_format, seq_num):
     """根據規則生成檔案名稱。(與先前版本相同)"""
     if filename_rule == 'seq':
-        return f'{seq_num:04d}.png'
+        return f'{seq_num:04d}.{file_format}'
     elif filename_rule == 'char':
         # 對於可能包含不適合做檔名的字元進行處理 (例如 / \ : * ? " < > |)
         safe_char = "".join(c for c in char if c.isalnum() or c in (' ', '.', '_')).rstrip()
         if not safe_char: # 如果字元本身就是特殊符號，給個替代名稱
              safe_char = f'char_{seq_num:04d}'
-        return f'{safe_char}.png'
+        return f'{safe_char}.{file_format}'
     elif filename_rule == 'unicode_int':
-        return f'{ord(char)}.png'
+        return f'{ord(char)}.{file_format}'
     elif filename_rule == 'unicode_hex':
-        return f'{ord(char):x}.png'
+        return f'{ord(char):x}.{file_format}'
     else:
-        return f'{seq_num:04d}.png' # 預設
+        return f'{seq_num:04d}.{file_format}' # 預設
 
 def draw_character(char, font, canvas_size, x_offset, y_offset, background_color = 'white'):
     """繪製單個字元圖像。"""
@@ -67,7 +67,7 @@ def is_image_blank(image):
     else:
         return False
 
-def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False, disable_binary=False):
+def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_format="png", file_path=None, x_offset=0, y_offset=0, clear_output_dir=False, disable_binary=False):
     """使用指定參數生成字元圖像。"""
     font = load_font(font_path, font_size)
     if font is None:
@@ -117,7 +117,7 @@ def generate_glyph_images(keyword, font_path, font_size, canvas_size, output_dir
     saved_count = 0
     skipped_count = 0
     for i, char in enumerate(unique_characters):
-        filename = generate_filename(char, filename_rule, i)
+        filename = generate_filename(char, filename_rule, file_format, i)
         output_path = os.path.join(output_dir, filename)
 
         image_rgb = draw_character(char, font, canvas_size, x_offset, y_offset, background_color='white')
@@ -267,7 +267,7 @@ def is_image_blank_cv(image_bgr, background_color_bgr=(255, 255, 255)):
     # 檢查是否所有像素都等於背景色
     return np.all(image_bgr == background_color_bgr)
 
-def generate_glyph_images_cv(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False, threshold_value=128, disable_binary=False):
+def generate_glyph_images_cv(keyword, font_path, font_size, canvas_size, output_dir, filename_rule, file_format, file_path=None, x_offset=0, y_offset=0, clear_output_dir=False, threshold_value=128, disable_binary=False):
     """使用 OpenCV 和 FreeType 生成字元圖像，並進行二極化處理後儲存。"""
     face = load_font_freetype(font_path)
     if face is None:
@@ -324,7 +324,7 @@ def generate_glyph_images_cv(keyword, font_path, font_size, canvas_size, output_
     background_bgr = (255, 255, 255) # OpenCV White background (BGR)
 
     for i, char in enumerate(unique_characters):
-        filename = generate_filename(char, filename_rule, i)
+        filename = generate_filename(char, filename_rule, file_format, i)
         output_path = os.path.join(output_dir, filename)
 
         # 創建 BGR 圖像 (包含文字)
@@ -382,6 +382,7 @@ if __name__ == '__main__':
     parser.add_argument("--clear", action="store_true", help="清除輸出目錄中的所有檔案。")
     parser.add_argument("--disable_binary", action="store_true", help="停用二極化")
     parser.add_argument("--threshold", type=int, default=128, help="二極化的閾值 (0-255) (預設: 128)。")
+    parser.add_argument("-f", "--format", default="png", help="目標檔案格式 (例如: pbm, png, jpg)")
 
     args = parser.parse_args()
 
@@ -390,21 +391,6 @@ if __name__ == '__main__':
          logging.warning(f"警告: 畫布大小 ({args.canvas_size}) 小於字體大小 ({args.font_size})，字元可能無法完整顯示。建議增加 canvas_size。")
 
     # 執行生成函數
-    '''
-    generate_glyph_images(
-        keyword=args.keyword,
-        font_path=args.font,
-        font_size=args.font_size,
-        canvas_size=args.canvas_size,
-        output_dir=args.output_dir,
-        filename_rule=args.filename_rule,
-        file_path=args.file,
-        x_offset=args.x_offset,
-        y_offset=args.y_offset,
-        clear_output_dir=args.clear,
-        disable_binary=args.disable_binary
-    )
-    '''
     generate_glyph_images_cv(
         keyword=args.keyword,
         font_path=args.font,
@@ -412,6 +398,7 @@ if __name__ == '__main__':
         canvas_size=args.canvas_size,
         output_dir=args.output_dir,
         filename_rule=args.filename_rule,
+        file_format=args.format,
         file_path=args.file,
         x_offset=args.x_offset,
         y_offset=args.y_offset,
