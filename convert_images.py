@@ -51,7 +51,7 @@ def is_image_file(filename):
     """
     檢查檔案名稱是否為常見的圖片檔案格式。
     """
-    extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp"}
+    extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp", '.pbm', '.pgm', '.ppm'}
     return any(filename.lower().endswith(ext) for ext in extensions)
 
 if __name__ == "__main__":
