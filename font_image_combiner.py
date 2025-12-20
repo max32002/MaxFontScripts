@@ -69,11 +69,11 @@ def draw_character(char, font, canvas_size, x_offset=0, y_offset=0, auto_fit=Tru
     return img
 
 def create_collage(char, image_dir, target_font, canvas_size,
-                   target_x_offset, target_y_offset,
+                   x_offset, y_offset,
                    filtered_hashes, reverse, auto_fit=True):
     target_image = draw_character(
         char, target_font, canvas_size,
-        target_x_offset, target_y_offset,
+        x_offset, y_offset,
         auto_fit=auto_fit
     )
 
@@ -127,17 +127,17 @@ def filter_recurring_hashes(charset, font, canvas_size, x_offset, y_offset):
     return {hash_val for hash_val, count in hash_counts.items() if count > 2}
 
 
-def process_images(image_dir, font_path, charset, char_size, canvas_size, target_x_offset, target_y_offset,
+def process_images(image_dir, font_path, charset, char_size, canvas_size, x_offset, y_offset,
                    output_dir, filename_prefix="", filename_rule="seq", filter_hashes=True, reverse=False, auto_fit=True):
     """處理圖像並儲存範例。"""
     target_font = ImageFont.truetype(str(font_path), size=char_size)
-    filtered_hashes = filter_recurring_hashes(charset, target_font, canvas_size, target_x_offset, target_y_offset) if filter_hashes else set()
+    filtered_hashes = filter_recurring_hashes(charset, target_font, canvas_size, x_offset, y_offset) if filter_hashes else set()
     print(f"過濾雜湊值：{', '.join(map(str, filtered_hashes))}")
 
     count = 0
     for char in tqdm(charset, desc="處理字元"):
-        image_binary = create_collage(char, image_dir, target_font, canvas_size, target_x_offset,
-                                        target_y_offset, filtered_hashes, reverse, auto_fit=auto_fit)
+        image_binary = create_collage(char, image_dir, target_font, canvas_size, x_offset,
+                                        y_offset, filtered_hashes, reverse, auto_fit=auto_fit)
         if image_binary is not None:
             filename = "%05d" % (count)
             if filename_rule=="unicode_int":
@@ -166,8 +166,8 @@ def main(args):
     if args.shuffle:
         np.random.shuffle(charset)
 
-    process_images(image_dir, args.font_path, charset, args.char_size, args.canvas_size, args.target_x_offset,
-                    args.target_y_offset, output_dir, args.filename_prefix, args.filename_rule, args.filter_hashes, args.reverse, not args.disable_auto_fit)
+    process_images(image_dir, args.font_path, charset, args.char_size, args.canvas_size, args.x_offset,
+                    args.y_offset, output_dir, args.filename_prefix, args.filename_rule, args.filter_hashes, args.reverse, not args.disable_auto_fit)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="生成字型圖像範例。")
@@ -181,10 +181,10 @@ if __name__ == "__main__":
     # 圖像處理參數
     parser.add_argument("--canvas_size", type=int, default=256, help="畫布大小。")
     parser.add_argument("--char_size", type=int, default=256, help="字元大小。")
-    parser.add_argument("--target_x_offset", type=int, default=0, help="目標字型 X 軸偏移量。")
-    parser.add_argument("--target_y_offset", type=int, default=0, help="目標字型 Y 軸偏移量。")
+    parser.add_argument("--x_offset", type=int, default=0, help="字型 X 軸偏移量。")
+    parser.add_argument("--y_offset", type=int, default=0, help="字型 Y 軸偏移量。")
     parser.add_argument("--disable_auto_fit", action="store_true", help="停用圖像自動調整大小。")
-    parser.add_argument("--reverse", action="store_true", help="反轉源圖像和目標字型圖像的位置。")
+    parser.add_argument("--reverse", action="store_true", help="反轉源圖像和字型圖像的位置。")
 
     # 其他參數
     parser.add_argument('--filename_rule', type=str, default="seq", choices=['seq', 'char', 'unicode_int', 'unicode_hex'])
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     if not args.image_dir.is_dir():
         parser.error(f"源圖像目錄不存在：{args.image_dir}")
     if not args.font_path.is_file():
-        parser.error(f"目標字型檔案不存在：{args.font_path}")
+        parser.error(f"字型檔案不存在：{args.font_path}")
     if args.canvas_size <= 0:
         parser.error("畫布大小必須為正數。")
     if args.char_size <= 0:
