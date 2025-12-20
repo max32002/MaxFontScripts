@@ -12,9 +12,12 @@ from torch import nn
 from torchvision import transforms
 from tqdm import tqdm
 
-def is_image_file(filename):
-    IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.gif', '.tif', '.tiff'}
-    return any(filename.lower().endswith(ext) for ext in IMG_EXTENSIONS)
+
+def render_char(char, font, canvas_size, x_offset=0, y_offset=0):
+    img = Image.new("L", (canvas_size, canvas_size), 255)
+    draw = ImageDraw.Draw(img)
+    draw.text((x_offset, y_offset), char,  fill=0, font=font )
+    return img
 
 def draw_character(char, font, canvas_size, x_offset=0, y_offset=0, auto_fit=True):
     """渲染單個字元到圖像。"""
@@ -62,24 +65,18 @@ def draw_character(char, font, canvas_size, x_offset=0, y_offset=0, auto_fit=Tru
         img = transforms.ToPILImage()(img)
         img = img.resize((canvas_size, canvas_size), Image.BILINEAR)
     else:
-        img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
-        draw = ImageDraw.Draw(img)
-        draw.text((0 + x_offset, 0 + y_offset), char, (0, 0, 0), font=font)
-        img = img.convert('L')
+        img = render_char(char, font, canvas_size, x_offset, y_offset)
     return img
 
-def convert_to_gray_binary(image, kernel_size=1, threshold=127):
-    """將圖像轉換為灰階二值圖像。"""
-    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    blurred = cv2.GaussianBlur(opencv_image, (kernel_size, kernel_size), 0) if kernel_size > 0 else opencv_image
-    _, binary_image = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
-    return cv2.cvtColor(binary_image, cv2.COLOR_BGR2GRAY)
+def create_collage(char, image_dir, target_font, canvas_size,
+                   target_x_offset, target_y_offset,
+                   filtered_hashes, reverse, auto_fit=True):
+    target_image = draw_character(
+        char, target_font, canvas_size,
+        target_x_offset, target_y_offset,
+        auto_fit=auto_fit
+    )
 
-
-def create_example_image(char, source_image_dir, target_font, canvas_size, target_x_offset, target_y_offset,
-                         filtered_hashes, reverse, auto_fit=True):
-    """創建源圖像和目標字型圖像的合併範例。"""
-    target_image = draw_character(char, target_font, canvas_size, target_x_offset, target_y_offset, auto_fit=auto_fit)
     if target_image is None:
         print(f"渲染字元失敗：{char}")
         return None
@@ -87,28 +84,37 @@ def create_example_image(char, source_image_dir, target_font, canvas_size, targe
     if hash(target_image.tobytes()) in filtered_hashes:
         return None
 
-    source_image_path = Path(source_image_dir) / f"{ord(char)}.*"
-    source_image_files = [f for f in Path(source_image_dir).glob(f"{ord(char)}.*") if is_image_file(f.name)]
-
-    if source_image_files:
-        source_image_path = source_image_files[0]
-        try:
-            source_image = Image.open(source_image_path)
-        except Exception as e:
-            print(f"無法開啟源圖像：{source_image_path} - {e}")
-            return None
-    else:
-        print(f"找不到符合格式的源圖像：{Path(source_image_dir) / str(ord(char))}.({'|'.join(IMG_EXTENSIONS)})")
+    source_image_path = Path(image_dir) / f"{ord(char)}.png"
+    if not source_image_path.exists():
+        print(f"找不到來源圖像：{source_image_path}")
         return None
+
+    source_image = Image.open(source_image_path)
+
+    # 尺寸檢查與 resize
+    w, h = source_image.size
+    if w != canvas_size or h != canvas_size:
+        source_image = source_image.resize(
+            (canvas_size, canvas_size),
+            resample=Image.LANCZOS
+        )
 
     font_x_position = canvas_size if reverse else 0
     image_x_position = 0 if reverse else canvas_size
 
-    example_image = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    example_image = Image.new(
+        "RGB",
+        (canvas_size * 2, canvas_size),
+        (255, 255, 255)
+    )
+
     example_image.paste(target_image, (font_x_position, 0))
     example_image.paste(source_image, (image_x_position, 0))
 
-    return convert_to_gray_binary(example_image)
+    image_binary = example_image.convert("1", dither=Image.NONE)
+
+    return image_binary
+
 
 
 def filter_recurring_hashes(charset, font, canvas_size, x_offset, y_offset):
@@ -121,54 +127,54 @@ def filter_recurring_hashes(charset, font, canvas_size, x_offset, y_offset):
     return {hash_val for hash_val, count in hash_counts.items() if count > 2}
 
 
-def process_images(source_image_dir, target_font_path, charset, char_size, canvas_size, target_x_offset, target_y_offset,
+def process_images(image_dir, font_path, charset, char_size, canvas_size, target_x_offset, target_y_offset,
                    output_dir, filename_prefix="", filename_rule="seq", filter_hashes=True, reverse=False, auto_fit=True):
     """處理圖像並儲存範例。"""
-    target_font = ImageFont.truetype(str(target_font_path), size=char_size)
+    target_font = ImageFont.truetype(str(font_path), size=char_size)
     filtered_hashes = filter_recurring_hashes(charset, target_font, canvas_size, target_x_offset, target_y_offset) if filter_hashes else set()
     print(f"過濾雜湊值：{', '.join(map(str, filtered_hashes))}")
 
     count = 0
     for char in tqdm(charset, desc="處理字元"):
-        example = create_example_image(char, source_image_dir, target_font, canvas_size, target_x_offset,
+        image_binary = create_collage(char, image_dir, target_font, canvas_size, target_x_offset,
                                         target_y_offset, filtered_hashes, reverse, auto_fit=auto_fit)
-        if example is not None:
+        if image_binary is not None:
             filename = "%05d" % (count)
             if filename_rule=="unicode_int":
                 filename = f"{ord(char)}"
             if filename_rule=="unicode_hex":
                 filename = f"{ord(char):x}"
             target_filename = filename_prefix + filename + ".png"
-
-            cv2.imwrite(str(Path(output_dir) / f"{target_filename}"), example)
+            output_path = str(Path(output_dir) / f"{target_filename}")
+            image_binary.save(output_path)
             count += 1
 
 def main(args):
     """主函數。"""
-    source_image_dir = Path(args.source_image_dir).resolve()
+    image_dir = Path(args.image_dir).resolve()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.source_image_dir is None or args.target_font_path is None:
-        raise ValueError('必須提供 source_image_dir 和 target_font_path。')
+    if args.image_dir is None or args.font_path is None:
+        raise ValueError('必須提供 image_dir 和 font_path。')
 
     if args.charset:
         charset = list(open(args.charset, encoding='utf-8').readline().strip())
     else:
-        charset = sorted(list(set([chr(int(file.stem)) for file in Path(source_image_dir).iterdir() if is_image_file(file.name)])))
+        charset = [chr(int(file.stem)) for file in image_dir.glob("*.png")]
 
     if args.shuffle:
         np.random.shuffle(charset)
 
-    process_images(source_image_dir, args.target_font_path, charset, args.char_size, args.canvas_size, args.target_x_offset,
+    process_images(image_dir, args.font_path, charset, args.char_size, args.canvas_size, args.target_x_offset,
                     args.target_y_offset, output_dir, args.filename_prefix, args.filename_rule, args.filter_hashes, args.reverse, not args.disable_auto_fit)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="生成字型圖像範例。")
 
     # 檔案路徑參數
-    parser.add_argument("--source_image_dir", type=Path, required=True, help="源圖像目錄路徑。")
-    parser.add_argument("--target_font_path", type=Path, required=True, help="目標字型檔案路徑。")
+    parser.add_argument("--image_dir", type=Path, required=True, help="圖像目錄路徑。")
+    parser.add_argument("--font_path", type=Path, required=True, help="字型檔案路徑。")
     parser.add_argument("--output_dir", type=Path, default=Path("output_dir"), help="輸出目錄路徑。")
     parser.add_argument("--charset", type=str, help="字元集檔案路徑（一行一個字元）。")
 
@@ -188,10 +194,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # 參數驗證
-    if not args.source_image_dir.is_dir():
-        parser.error(f"源圖像目錄不存在：{args.source_image_dir}")
-    if not args.target_font_path.is_file():
-        parser.error(f"目標字型檔案不存在：{args.target_font_path}")
+    if not args.image_dir.is_dir():
+        parser.error(f"源圖像目錄不存在：{args.image_dir}")
+    if not args.font_path.is_file():
+        parser.error(f"目標字型檔案不存在：{args.font_path}")
     if args.canvas_size <= 0:
         parser.error("畫布大小必須為正數。")
     if args.char_size <= 0:
