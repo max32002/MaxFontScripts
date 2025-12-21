@@ -48,7 +48,12 @@ def generate_filename(char, filename_rule, file_format, seq_num):
     else:
         return f'{seq_num:04d}.{file_format}' # 預設
 
-def render_char(char, font, canvas_size, x_offset=0, y_offset=0):
+def render_char(char, font, canvas_size, x_offset=0, y_offset=0): 
+    mask = font.getmask(char) 
+    if not mask.getbbox(): 
+        #print(f"字體不支援這個字: {char}") 
+        return None
+
     img = Image.new("L", (canvas_size, canvas_size), 255)
     draw = ImageDraw.Draw(img)
     draw.text((x_offset, y_offset), char,  fill=0, font=font )
