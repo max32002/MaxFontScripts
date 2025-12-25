@@ -9,6 +9,29 @@ import shutil
 import logging
 import cv2
 
+class SimpleColorFormatter(logging.Formatter):
+    # 定義顏色碼
+    COLORS = {
+        'INFO': "\x1b[32mINFO\x1b[0m",
+        'WARNING': "\x1b[33mWARNING\x1b[0m",
+        'ERROR': "\x1b[31mERROR\x1b[0m",
+        'DEBUG': "\x1b[36mDEBUG\x1b[0m",
+    }
+
+    def format(self, record):
+        level_name = self.COLORS.get(record.levelname, record.levelname)
+        return f"{level_name}: {record.getMessage()}"
+
+# 套用設定
+handler = logging.StreamHandler()
+handler.setFormatter(SimpleColorFormatter())
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(logging.INFO)
+
+# 設定日誌記錄
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname).1s: %(message)s')
+
 def check_potrace(potrace_path):
     """檢查 potrace 是否存在。如果不存在，則引發異常。"""
     if shutil.which(potrace_path) is None:
@@ -135,10 +158,6 @@ def cli():
     parser.add_argument("--potrace", help="Path to potrace executable", default="potrace")
 
     args = parser.parse_args()
-
-    # 配置 logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
     main(args)
 
 if __name__ == "__main__":
