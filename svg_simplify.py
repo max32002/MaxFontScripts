@@ -1,90 +1,91 @@
 #!/usr/bin/env python3
-#encoding=utf-8
-# https://github.com/scour-project/scour
-# pip install scour
+# -*- coding: utf-8 -*-
 import argparse
-import os
 import subprocess
 import concurrent.futures
+import shutil
+import sys
+from pathlib import Path
+import logging
 
-def main(args):
-    from_folder = args.input
-    to_folder = args.output
+# 設定日誌格式
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-    if len(to_folder) == 0:
-        to_folder = from_folder
-    print("From folder:", from_folder)
-    print("To folder:", to_folder)
+def check_scour_installed():
+    """檢查系統是否安裝了 scour 執行檔"""
+    if shutil.which("scour") is None:
+        logging.error("找不到 'scour' 指令。")
+        logging.error("請先安裝 Scour: pip install scour")
+        return False
+    return True
 
-    cmd_list = []
-    idx=0
-    convert_count=0
+def process_svg(file_info):
+    """處理單個 SVG 檔案"""
+    input_path, output_path = file_info
     
-    filename_list = []
-    target_folder_list = os.listdir(from_folder)
-    print("Total file in from folder:", len(target_folder_list))
-    for filename in target_folder_list:
-        is_supported_image = False
-        if filename.endswith(".svg"): 
-            is_supported_image = True
-        if is_supported_image:
-            filename_list.append(filename)
+    cmd = [
+        "scour", "-q",
+        "-i", str(input_path),
+        "-o", str(output_path),
+        "--enable-viewboxing",
+        "--enable-id-stripping",
+        "--enable-comment-stripping",
+        "--shorten-ids",
+        "--indent=none"
+    ]
+    
+    try:
+        # check=True 會在指令失敗時拋出異常
+        subprocess.run(cmd, check=True, capture_output=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error(f"轉換失敗 [{input_path.name}]: {e.stderr.decode().strip()}")
+        return False
 
-    for filename in filename_list:
-        idx+=1
-        #print("convert filename:", name)
-        from_svg_path = os.path.join(from_folder, filename)
-        to_svg_path = os.path.join(to_folder, filename)
-        shell_cmd = 'scour -q -i %s -o %s --enable-viewboxing --enable-id-stripping --enable-comment-stripping --shorten-ids --indent=none' % (from_svg_path, to_svg_path)
-        #print("shell_cmd:", shell_cmd)
-        
-        # single thread
-        #subprocess.call(shell_cmd)
-        convert_count+=1
+def run_batch_conversion(args):
+    """主邏輯控制區"""
+    src_dir = Path(args.input)
+    dst_dir = Path(args.output) if args.output else src_dir
 
-        # multi thread
-        cmd_list.append(shell_cmd)
-        
-        if idx % 1000 == 0:
-            # single thread
-            #print("Processing svg: %d" % (idx))
-            pass
+    if not src_dir.is_dir():
+        logging.error(f"來源路徑不是有效的資料夾: {src_dir}")
+        return
 
-    # multi thread
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(subprocess.call, cmd_list)
+    dst_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Convert file count:%d\n" % (convert_count))
+    # 搜尋所有 .svg 檔案
+    svg_files = list(src_dir.glob("*.svg"))
+    if not svg_files:
+        logging.info("資料夾中沒有 .svg 檔案。")
+        return
 
-def cli():
-    parser = argparse.ArgumentParser(
-            description="batch convert svg from source folder to target folder")
+    tasks = [(f, dst_dir / f.name) for f in svg_files]
+    logging.info(f"開始優化 {len(tasks)} 個檔案 (並行度: {args.workers or '自動'})...")
 
-    parser.add_argument("--input",
-        help="source folder",
-        type=str)
+    success_count = 0
+    # 使用 ThreadPoolExecutor 進行並行處理
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+        results = list(executor.map(process_svg, tasks))
+        success_count = sum(1 for r in results if r)
 
-    parser.add_argument("--output",
-        help="target folder",
-        default="", 
-        type=str)
+    logging.info("-" * 30)
+    logging.info(f"任務完成！")
+    logging.info(f"成功: {success_count}")
+    logging.info(f"失敗: {len(tasks) - success_count}")
+
+def main():
+    parser = argparse.ArgumentParser(description="SVG 批次優化工具 (Scour 封裝)")
+    parser.add_argument("--input", "-i", required=True, help="來源資料夾路徑")
+    parser.add_argument("--output", "-o", help="輸出資料夾路徑 (預設蓋過原檔)")
+    parser.add_argument("--workers", "-w", type=int, default=None, help="並行工作數量")
     
     args = parser.parse_args()
 
-    pass_precheck = True
+    # --- 核心檢查點 ---
+    if not check_scour_installed():
+        sys.exit(1) # 回傳非零狀態碼表示異常結束
     
-    if not os.path.exists(args.input):
-        pass_precheck = False
-        print("input folder not found: %s" % (args.input))
-
-    if not os.path.exists(args.output):
-        #pass_precheck = False
-        #print("output folder not found: %s" % (args.output))
-        if not os.path.isdir(args.output):
-            os.mkdir(args.output)
-
-    if pass_precheck:
-        main(args)
+    run_batch_conversion(args)
 
 if __name__ == "__main__":
-    cli()
+    main()

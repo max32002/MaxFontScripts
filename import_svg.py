@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 #encoding=utf-8
-
 import os
 from os.path import exists, normpath, basename
 import argparse
@@ -160,82 +159,27 @@ def import_svg(myfont, svg_path, filename_pattern, filename_source, scale, simpl
 
 
 def cli():
-    parser = argparse.ArgumentParser(
-            description="import svg to font")
-
-    parser.add_argument("--input",
-        help="input font project or file",
-        required=True,
-        type=str)
-
-    parser.add_argument("--output",
-        help="output font project or file",
-        default=None,
-        type=str)
-
-    parser.add_argument("--svg_path",
-        help="import svg folder",
-        default=".",
-        type=str)
-
-    parser.add_argument("--filename_pattern",
-        help="svg filename pattern",
-        default="%s.svg",
-        type=str)
-    
+    parser = argparse.ArgumentParser( description="import svg to font")
+    parser.add_argument("--input", "-i", help="input font project or file", required=True, type=str)
+    parser.add_argument("--output", "-o", help="output font project or file", default=None, type=str)
+    parser.add_argument("--svg_path", "-s", help="import svg folder", default=".", type=str)
+    parser.add_argument("--filename_pattern", help="svg filename pattern", default="%s.svg", type=str)
     parser.add_argument("--filename_source", type=str, choices=['char', 'unicode_hex', 'unicode_int'],
         help='svg filename pattern source.\n'
              'use char for character.\n'
              'use unicode_hex for unicode hex .\n'
              'use unicode_hex for unicode decimal.',
-        default="unicode_int",
-        )
-
-    parser.add_argument('--enable_scale', 
-        help='enable to scale imported images and SVGs to ascender height',
-        action='store_true'
-        )
-    parser.add_argument('--disable_simplify', 
-        help='disable to simplify on the output of stroked paths',
-        action='store_true'
-        )
-
-    # font config.
-    parser.add_argument("--comment",
-        help="A comment associated with the font. Can be anything.",
-        type=str)
-
-    parser.add_argument("--familyname",
-        help="PostScript font family name",
-        type=str)
-
-    parser.add_argument("--fontname",
-        help="PostScript font name",
-        type=str)
-
-    parser.add_argument("--fullname",
-        help="PostScript font name",
-        type=str)
-
-    parser.add_argument("--macstyle",
-        help="Bold (if set to 1)",
-        type=int)
-
-    parser.add_argument("--weight",
-        help="PostScript font weight string",
-        type=str)
-
-    # convert name list.
-    parser.add_argument("--namelist",
-        help="namelist string",
-        default="",
-        type=str)
-
-    parser.add_argument("--width",
-                        help="字形寬度，預設值為 1000",
-                        type=int,
-                        default=1000)
-
+        default="unicode_int", )
+    parser.add_argument('--enable_scale',  help='enable to scale imported images and SVGs to ascender height', action='store_true' )
+    parser.add_argument('--disable_simplify',  help='disable to simplify on the output of stroked paths', action='store_true' )
+    parser.add_argument("--comment", help="A comment associated with the font. Can be anything.", type=str)
+    parser.add_argument("--familyname", help="PostScript font family name", type=str)
+    parser.add_argument("--fontname", help="PostScript font name", type=str)
+    parser.add_argument("--fullname", help="PostScript font name", type=str)
+    parser.add_argument("--macstyle", help="Bold (if set to 1)", type=int)
+    parser.add_argument("--weight", help="PostScript font weight string", type=str)
+    parser.add_argument("--namelist", help="namelist string", default="", type=str)
+    parser.add_argument("--width", help="字形寬度，預設值為 1000", type=int, default=1000)
     args = parser.parse_args()
 
     pass_precheck = True
