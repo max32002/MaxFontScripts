@@ -1,140 +1,111 @@
 #!/usr/bin/env python3
-#encoding=utf-8
+# -*- coding: utf-8 -*-
 
-import os
-from os.path import exists, normpath, basename
 import argparse
+import sys
+from pathlib import Path
 
-def font_delete_font_main(args):
-    ff_path = args.input
-    remove_path = args.remove
-    out_path = args.output
+# 確保環境中有 fontforge
+try:
+    import fontforge
+except ImportError:
+    print("Error: FontForge python module not found. Please run this with fontforge python.")
+    sys.exit(1)
 
-    if len(ff_path) > 0:
-        if ff_path[:1] == "/":
-            ff_path = ff_path[:-1]
-
-    if ff_path.endswith(".ttf"):
-        font_name = basename(normpath(ff_path))
-        project_path = font_name + ".sfdir"
-        if out_path is None:
-            out_path = project_path
-
-    export_as_font = False
-
-    if out_path is None:
-        if ff_path.endswith(".ttf") or ff_path.endswith(".woff") or ff_path.endswith(".woff2"):
-            export_as_font = True
-    else:
-        if out_path.endswith(".ttf") or out_path.endswith(".woff") or out_path.endswith(".woff2"):
-            export_as_font = True
-
-    print("Input font:", ff_path)
-    print("Removed font:", remove_path)
-    print("Save font:", out_path)
-
-    if exists(ff_path) and exists(remove_path):
-        myfont=fontforge.open(ff_path)
+def get_glyph_unicode_set(font):
+    """
+    從字體中提取所有 Unicode 編碼（包含 altuni）
+    """
+    unicode_set = set()
+    for glyph in font.glyphs():
+        # 排除無編碼或寬度為 0 的字符
+        if glyph.unicode <= 0 or glyph.width <= 0:
+            continue
         
-        removefont=fontforge.open(remove_path)
-        target_charset_list = get_glyph_list(removefont)
-        print('length of remove target count:', len(target_charset_list))
+        unicode_set.add(glyph.unicode)
+        
+        # 處理變體編碼 (Alternative Unicodes)
+        if glyph.altuni:
+            for alt_entry in glyph.altuni:
+                # alt_entry 通常是 (unicode, variation_selector, reserved)
+                if isinstance(alt_entry, tuple) and alt_entry[0] > 0:
+                    unicode_set.add(alt_entry[0])
+    return unicode_set
 
-        myfont, cleared_char_list = clear_glyph(myfont, target_charset_list)
-        print("Cleared count:", len(cleared_char_list))
+def process_font(input_path, remove_path, output_path):
+    """
+    執行字體字符刪除的核心邏輯
+    """
+    input_p = Path(input_path)
+    remove_p = Path(remove_path)
+    
+    # 判斷輸出路徑
+    if not output_path:
+        # 如果沒指定輸出，預設儲存為 .sfdir 專案檔
+        output_p = input_p.with_suffix('.sfdir')
+    else:
+        output_p = Path(output_path)
 
-        if len(cleared_char_list) > 0:
-            if export_as_font:
-                myfont.generate(out_path)
-            else:
-                if out_path is None:
-                    myfont.save()
-                else:
-                    myfont.save(out_path)
+    print(f"[*] Input:  {input_p}")
+    print(f"[*] Target: {remove_p}")
+    print(f"[*] Output: {output_p}")
+
+    # 開啟字體
+    try:
+        main_font = fontforge.open(str(input_p))
+        remove_font = fontforge.open(str(remove_p))
+    except Exception as e:
+        print(f"Error opening font: {e}")
+        return
+
+    # 獲取要刪除的 Unicode 集合
+    targets = get_glyph_unicode_set(remove_font)
+    print(f"[*] Found {len(targets)} glyphs to potentially remove.")
+
+    # 效能優化點：使用 selection.select 批次選取，而非迴圈 clear
+    # 我們只選取存在於 main_font 且在 targets 清單中的字符
+    found_to_remove = []
+    for uni in targets:
+        if uni in main_font:
+            found_to_remove.append(uni)
+
+    if found_to_remove:
+        # 使用 tuple 傳入 unicode 列表進行批次選取
+        main_font.selection.select(('unicode',), *found_to_remove)
+        main_font.clear()
+        print(f"[*] Successfully cleared {len(found_to_remove)} glyphs.")
+        
+        # 根據副檔名決定產生方式
+        ext = output_p.suffix.lower()
+        if ext in ['.ttf', '.woff', '.woff2', '.otf']:
+            print(f"[*] Generating font file: {output_p}")
+            main_font.generate(str(output_p))
         else:
-            print("Do nothing due to no changed glyph.")
+            print(f"[*] Saving font project: {output_p}")
+            main_font.save(str(output_p))
+    else:
+        print("[!] No matching glyphs found. No changes made.")
 
-def get_glyph_list(myfont):
-    myfont.selection.all()
-    charset_list = set()
-    all_glyph_list = list(myfont.selection.byGlyphs)
-    idx = 0
-    for glyph in all_glyph_list:
-        idx +=1
-        unicode_int = glyph.unicode
-        if unicode_int <= 0:
-            continue
-        if glyph.width <= 0:
-            continue
-        charset_list.add(unicode_int)
-        if not glyph.altuni is None:
-            for altuni_tuple in glyph.altuni:
-                #print("glyph altuni_tuple:", altuni_tuple)
-                unicode_value = 0
-                try:
-                    (unicode_value, variation_selector, reserved_field) = altuni_tuple
-                except Exception as exc:
-                    #print("glyph altuni:", glyph.altuni)
-                    print(exc)
-                    pass
-
-                if unicode_value > 0:
-                    charset_list.add(unicode_value)
-    return charset_list
-
-def clear_glyph(myfont, selected_chars):
-    myfont.selection.all()
-    all_glyph_list = list(myfont.selection.byGlyphs)
-    cleared_char_list = set()
-    idx = 0
-    for glyph in all_glyph_list:
-        idx +=1
-        unicode_int = glyph.unicode
-        if unicode_int <= 0:
-            continue
-        if glyph.width <= 0:
-            continue
-        if unicode_int in selected_chars:
-            glyph.clear()
-            cleared_char_list.add(unicode_int)
-        if idx % 1000 == 0:
-            print("Processing glyph: %d" % (idx))
-    return myfont, cleared_char_list
-
+    main_font.close()
+    remove_font.close()
 
 def cli():
-    parser = argparse.ArgumentParser(
-            description="clear glyph from font")
-
-    parser.add_argument("--input",
-        help="input font project or file",
-        required=True,
-        type=str)
-
-    parser.add_argument("--remove",
-        help="clear list font project or file",
-        required=True,
-        type=str)
-
-    parser.add_argument("--output",
-        help="output font project or file",
-        default=None,
-        type=str)
-
-
+    parser = argparse.ArgumentParser(description="從 A 字體中移除所有 B 字體含有的字符")
+    parser.add_argument("--input", "-i", help="來源字體檔案 (TTF/WOFF/SFDIR)", required=True)
+    parser.add_argument("--remove", "-r", help="參考字體檔案 (要從來源中刪除的字符集)", required=True)
+    parser.add_argument("--output", "-o", help="輸出路徑 (未指定則儲存為 .sfdir)", default=None)
+    
     args = parser.parse_args()
 
-    pass_precheck = True
-    if not exists(args.input):
-        pass_precheck = False
-        print("input path not found: %s" % (args.input))
+    # 檢查檔案是否存在
+    if not Path(args.input).exists():
+        print(f"Error: Input path not found: {args.input}")
+        return
+    if not Path(args.remove).exists():
+        print(f"Error: Remove path not found: {args.remove}")
+        return
 
-    if not exists(args.remove):
-        pass_precheck = False
-        print("remove path not found: %s" % (args.remove))
-
-    if pass_precheck:
-        font_delete_font_main(args)
+    process_font(args.input, args.remove, args.output)
 
 if __name__ == "__main__":
     cli()
