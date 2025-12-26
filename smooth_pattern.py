@@ -24,25 +24,43 @@ def reduce_ink_bleeding(img_bin, kernel_size=3):
 
 def apply_pattern_cleaning_fast(img_bin, patterns_list):
     """
-    快速 Pattern 清理，確保 1:1 像素對齊
+    優化後的 Pattern 清理：確保處理後依然是二值圖
     """
     processed = img_bin.copy()
     for pattern, replacement in patterns_list:
-        diff_mask = (pattern != replacement)
+        h, w = pattern.shape
+        # 確保 pattern 是 uint8 且值為 0 或 255
+        p_255 = (pattern > 0).astype(np.uint8) * 255
+        
         for i in range(4):
-            p_rot = np.rot90(pattern, k=i)
+            p_rot = np.rot90(p_255, k=i)
             r_rot = np.rot90(replacement, k=i)
-            d_rot = np.rot90(diff_mask, k=i)
             
+            # 使用 matchTemplate 找出 100% 匹配的地方
             res = cv2.matchTemplate(processed, p_rot, cv2.TM_SQDIFF)
-            loc = np.where(res == 0)
+            # 容許微小誤差 (若考慮到先前 blur 產生的浮點數誤差)
+            loc = np.where(res <= 0) 
             
-            h, w = p_rot.shape
             for pt in zip(*loc[::-1]):
                 x, y = pt
-                roi = processed[y:y+h, x:x+w]
-                roi[d_rot] = r_rot[d_rot]
+                # 直接替換整個區塊或根據 mask 替換
+                processed[y:y+h, x:x+w] = r_rot
+                
     return processed
+
+def apply_blur_and_threshold(cleaned):
+    """
+    超採樣平滑化，並強制轉回二值圖以利後續處理
+    """
+    h, w = cleaned.shape[:2]
+    img_upscaled = cv2.resize(cleaned, (w * 2, h * 2), interpolation=cv2.INTER_LINEAR)
+    img_smoothed = cv2.medianBlur(img_upscaled, 3)
+    img_downscaled = cv2.resize(img_smoothed, (w, h), interpolation=cv2.INTER_AREA)
+    
+    # 邏輯修正：必須進行 Threshold，否則後續的 Pattern Matching 會失效
+    _, final_bin = cv2.threshold(img_downscaled, 127, 255, cv2.THRESH_BINARY)
+    return final_bin
+
 
 def get_patterns():
     """清理特定的像素雜點樣式"""
@@ -137,25 +155,26 @@ def apply_blue(cleaned):
     return final_bin
 
 def process_file(input_path, output_path, patterns):
-    # 1. 讀取並轉為黑底白字
     img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
     if img is None: return
+    
+    # 1. 二值化 (黑底白字)
     _, img_bin = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY_INV)
 
-    # 2. 【核心】減少暈染：分離黏連的筆畫
-    # kernel_size=3 是最安全的選擇，若暈染嚴重可改用 5
+    # 2. 形態學分離筆畫
     img_bin = reduce_ink_bleeding(img_bin, kernel_size=3)
 
-    # 3. 執行 Pattern 清理 (處理特定細節)
+    # 3. 第一次清理雜點 (針對鋸齒)
     patterns_255 = [(p * 255, r * 255) for p, r in patterns]
     cleaned = apply_pattern_cleaning_fast(img_bin, patterns_255)
 
-    # 4. blur
-    final_bin = apply_blue(cleaned)
+    # 4. 平滑化 (包含強制二值化回歸)
+    final_bin = apply_blur_and_threshold(cleaned)
 
+    # 5. 第二次清理 (處理平滑化後可能產生的特定單像素孤島)
     final_bin = apply_pattern_cleaning_fast(final_bin, patterns_255)
 
-    # 5. 轉回白底黑字輸出
+    # 6. 轉回白底黑字
     final_output = cv2.bitwise_not(final_bin)
     cv2.imwrite(output_path, final_output)
     print(f"處理完成: {os.path.basename(output_path)}")
