@@ -3,6 +3,8 @@ import numpy as np
 import argparse
 import os
 from glob import glob
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import partial
 
 def reduce_ink_bleeding(img_bin, kernel_size=3):
     """
@@ -25,26 +27,32 @@ def reduce_ink_bleeding(img_bin, kernel_size=3):
 def apply_pattern_cleaning_fast(img_bin, patterns_list):
     """
     優化後的 Pattern 清理：確保處理後依然是二值圖
+    修正了長方形 Pattern 旋轉後維度不匹配的問題
     """
     processed = img_bin.copy()
     for pattern, replacement in patterns_list:
-        h, w = pattern.shape
         # 確保 pattern 是 uint8 且值為 0 或 255
         p_255 = (pattern > 0).astype(np.uint8) * 255
+        r_255 = (replacement > 0).astype(np.uint8) * 255
         
         for i in range(4):
+            # 旋轉 Pattern 與其對應的替換內容
             p_rot = np.rot90(p_255, k=i)
-            r_rot = np.rot90(replacement, k=i)
+            r_rot = np.rot90(r_255, k=i)
+            
+            # 獲取旋轉後的實際高度與寬度
+            curr_h, curr_w = p_rot.shape
             
             # 使用 matchTemplate 找出 100% 匹配的地方
             res = cv2.matchTemplate(processed, p_rot, cv2.TM_SQDIFF)
-            # 容許微小誤差 (若考慮到先前 blur 產生的浮點數誤差)
+            
+            # 找出精確匹配 (SQDIFF 接近 0)
             loc = np.where(res <= 0) 
             
             for pt in zip(*loc[::-1]):
                 x, y = pt
-                # 直接替換整個區塊或根據 mask 替換
-                processed[y:y+h, x:x+w] = r_rot
+                # 使用旋轉後的 curr_h, curr_w 進行切片賦值
+                processed[y:y+curr_h, x:x+curr_w] = r_rot
                 
     return processed
 
@@ -154,7 +162,12 @@ def apply_blue(cleaned):
 
     return final_bin
 
-def process_file(input_path, output_path, patterns):
+def process_file(file_info, patterns):
+    """
+    file_info: (input_path, output_path)
+    """
+    input_path, output_path = file_info
+
     img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
     if img is None: return
     
@@ -180,32 +193,48 @@ def process_file(input_path, output_path, patterns):
     print(f"處理完成: {os.path.basename(output_path)}")
 
 def main():
-    parser = argparse.ArgumentParser(description='減少筆畫暈染並清理雜點')
+    parser = argparse.ArgumentParser(description='多進程加速：減少筆畫暈染並清理雜點')
     parser.add_argument('--input', '-i', required=True)
     parser.add_argument('--output', '-o')
+    parser.add_argument('--workers', '-w', type=int, default=os.cpu_count(), help='使用的 CPU 核心數')
     args = parser.parse_args()
 
     patterns = get_patterns()
     
-    # 處理資料夾或單一檔案
+    # 建立檔案清單
     if os.path.isdir(args.input):
         in_dir = args.input
         out_dir = args.output if args.output else f"{in_dir.rstrip('/')}_clean"
         os.makedirs(out_dir, exist_ok=True)
-        files = []
+        input_files = []
         for ext in ('*.png', '*.jpg', '*.jpeg', '*.bmp', '*.tiff'):
-            files.extend(glob(os.path.join(in_dir, ext)))
-    else:
-        files = [args.input]
-        out_dir = None
-
-    for f in files:
-        if out_dir:
+            input_files.extend(glob(os.path.join(in_dir, ext)))
+        
+        # 準備 (輸入, 輸出) 路徑對
+        tasks = []
+        for f in input_files:
             out_f = os.path.join(out_dir, os.path.basename(f))
-        else:
-            base, ext = os.path.splitext(f)
-            out_f = f"{base}_clean{ext}" if not args.output else args.output
-        process_file(f, out_f, patterns)
+            tasks.append((f, out_f))
+    else:
+        out_f = args.output if args.output else f"{os.path.splitext(args.input)[0]}_clean{os.path.splitext(args.input)[1]}"
+        tasks = [(args.input, out_f)]
+
+    # 使用 ProcessPoolExecutor 進行多進程並行處理
+    print(f"開始處理，使用核心數: {args.workers}，總檔案數: {len(tasks)}")
+    
+    # 使用 partial 固定 patterns 參數
+    worker_func = partial(process_file, patterns=patterns)
+
+    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+        # 提交所有任務
+        futures = {executor.submit(worker_func, task): task for task in tasks}
+        
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                print(result)
+            except Exception as e:
+                print(f"處理檔案時發生錯誤: {e}")
 
 if __name__ == "__main__":
     main()
