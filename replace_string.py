@@ -20,7 +20,7 @@ def process_file(file_path: Path, pattern: re.Pattern, replacement: str):
         
         if modified:
             temp_file.replace(file_path)
-            print(f"[已修改] {file_path}")
+            print(f"[\x1b[32m已修改\x1b[0m] {file_path}")
         else:
             temp_file.unlink() # 若無變動則刪除暫存檔，保持原檔案不變
             print(f"[無變動] {file_path}")
