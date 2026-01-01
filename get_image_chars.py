@@ -44,12 +44,18 @@ def main(args):
     if source_unicode_set:
         sorted_set = sorted(list(source_unicode_set))
         
-        # 判斷輸出檔名
         if args.output:
             filename_output = args.output
         else:
-            # 如果 user 沒輸入，使用資料夾名稱加上 .txt
-            filename_output = f"{source_folder.name}.txt"
+            # 使用 resolve() 先轉成絕對路徑再抓 name
+            # 這樣輸入 . 的時候就會拿到實際的資料夾名稱
+            folder_name = source_folder.resolve().name
+            
+            # 預防在根目錄執行導致名稱為空的情況
+            if not folder_name:
+                folder_name = "output"
+                
+            filename_output = f"{folder_name}.txt"
 
         save_set_to_file(sorted_set, filename_output)
 
