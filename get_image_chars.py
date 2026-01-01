@@ -26,9 +26,9 @@ def main(args):
             char_string = file_path.stem
             
             try:
-                if args.filename_source == 'unicode_int':
+                if args.filename_rule == 'unicode_int':
                     char_int = int(char_string)
-                elif args.filename_source == 'unicode_hex':
+                elif args.filename_rule == 'unicode_hex':
                     char_int = int(char_string, 16)
                 else:
                     if len(char_string) > 0:
@@ -61,7 +61,7 @@ def main(args):
 
         print(f"輸入目錄: {source_folder}")
         print(f"輸出檔案: {filename_output}")
-        print(f"解析格式: {args.filename_source}")
+        print(f"解析格式: {args.filename_rule}")
         print(f"字元數量: {len(sorted_set)}")
     else:
         print("資料夾內沒有符合條件的圖片檔案或解析失敗")
@@ -70,7 +70,7 @@ def cli():
     parser = argparse.ArgumentParser(description="從圖片檔名獲取字型清單")
     parser.add_argument("input", help="輸入目錄路徑")
     parser.add_argument("--output", "-o", help="輸出文件路徑", default=None)
-    parser.add_argument("--filename_source", "-f", 
+    parser.add_argument("--filename_rule", "-f", 
                         choices=['char', 'unicode_hex', 'unicode_int'], 
                         default="unicode_int", 
                         help="檔名解析格式")

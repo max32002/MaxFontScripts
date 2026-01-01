@@ -173,9 +173,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="生成字型圖像範例。")
 
     # 檔案路徑參數
-    parser.add_argument("--image_dir", type=Path, required=True, help="圖像目錄路徑。")
-    parser.add_argument("--font_path", type=Path, required=True, help="字型檔案路徑。")
-    parser.add_argument("--output_dir", type=Path, default=Path("output_dir"), help="輸出目錄路徑。")
+    parser.add_argument("image_dir", type=Path, help="圖像目錄路徑。")
+    parser.add_argument("--font_path", "-f", type=Path, required=True, help="字型檔案路徑。")
+    parser.add_argument("--output_dir", "-o", type=Path, default=Path("output_dir"), help="輸出目錄路徑。")
     parser.add_argument("--charset", type=str, help="字元集檔案路徑（一行一個字元）。")
 
     # 圖像處理參數

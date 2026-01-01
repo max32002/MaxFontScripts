@@ -47,7 +47,7 @@ def get_svg_width_logic(svg_path, default_width=1000):
     print(f"無法從檔案獲取規格，回退至預設值: {default_width}")
     return default_width
 
-def import_svg_to_glyphs(myfont, svg_path, filename_source, scale, simplify, detected_width):
+def import_svg_to_glyphs(myfont, svg_path, filename_rule, scale, simplify, detected_width):
     import_char_list = set()
     fail_char_list = set()
     
@@ -60,9 +60,9 @@ def import_svg_to_glyphs(myfont, svg_path, filename_source, scale, simplify, det
         
         # 轉換檔名為 Unicode
         try:
-            if filename_source == 'unicode_int':
+            if filename_rule == 'unicode_int':
                 unicode_int = int(filename_stem)
-            elif filename_source == 'unicode_hex':
+            elif filename_rule == 'unicode_hex':
                 unicode_int = int(filename_stem, 16)
             else:
                 unicode_int = ord(filename_stem)
@@ -110,7 +110,7 @@ def import_main(args):
     myfont = fontforge.open(str(in_path))
 
     imported = import_svg_to_glyphs(
-        myfont, args.svg_path, args.filename_source, 
+        myfont, args.svg_path, args.filename_rule, 
         args.enable_scale, not args.disable_simplify, detected_width
     )
 
@@ -136,7 +136,7 @@ def main():
     parser.add_argument("--input", "-i", required=True, help="輸入字型 (.ttf/.sfdir)")
     parser.add_argument("--output", "-o", help="輸出路徑")
     parser.add_argument("--svg_path", "-s", default=".", help="SVG 資料夾")
-    parser.add_argument("--filename_source", "-f", choices=['char', 'unicode_hex', 'unicode_int'], 
+    parser.add_argument("--filename_rule", "-f", choices=['char', 'unicode_hex', 'unicode_int'], 
                         default="unicode_int", help="檔名解析格式")
     parser.add_argument('--enable_scale', action='store_true', help='縮放至 Ascender')
     parser.add_argument('--disable_simplify', action='store_true', help='停用路徑簡化')
