@@ -1,48 +1,41 @@
 import argparse
-import os
+from pathlib import Path
 
+def rename_files(folder_path, action, value):
+    target_dir = Path(folder_path)
+    
+    if not target_dir.is_dir():
+        print(f"找不到目錄：{folder_path}")
+        return
 
-def add_prefix(folder_path, prefix):
-    """在指定目錄下的所有檔案名稱前新增前綴。"""
-    try:
-        for filename in os.listdir(folder_path):
-            if os.path.isfile(os.path.join(folder_path, filename)):
-                new_filename = prefix + filename
-                os.rename(os.path.join(folder_path, filename), os.path.join(folder_path, new_filename))
-                print(f"Renamed '{filename}' to '{new_filename}'")
-        print("Done adding prefix.")
-    except FileNotFoundError:
-        print(f"Error: Directory '{folder_path}' not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-def remove_prefix(folder_path, prefix_length):
-    """移除指定目錄下所有檔案名稱的前綴。"""
-    try:
-        for filename in os.listdir(folder_path):
-            if os.path.isfile(os.path.join(folder_path, filename)):
-                new_filename = filename[prefix_length:]
-                if new_filename != filename:
-                    os.rename(os.path.join(folder_path, filename), os.path.join(folder_path, new_filename))
-                    print(f"Renamed '{filename}' to '{new_filename}'")
-        print("Done removing prefix.")
-    except FileNotFoundError:
-        print(f"Error: Directory '{folder_path}' not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    for file_path in target_dir.iterdir():
+        if file_path.is_file():
+            old_name = file_path.name
+            
+            if action == "add":
+                new_name = f"{value}{old_name}"
+            elif action == "remove":
+                new_name = old_name[value:]
+            
+            if new_name and new_name != old_name:
+                try:
+                    file_path.rename(file_path.with_name(new_name))
+                    print(f"已更名：{old_name} -> {new_name}")
+                except Exception as e:
+                    print(f"更名失敗 {old_name}: {e}")
+    
+    print("處理完成")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Add or remove prefix from filenames in a directory.")
-    parser.add_argument("action", choices=["add", "remove"], help="Action to perform: add or remove prefix.")
-    parser.add_argument("--input", default=os.getcwd(), help="The input directory (default: current directory).")
-    parser.add_argument("--prefix", help="Prefix to add (required for 'add' action).")
-    parser.add_argument("--length", type=int, default=3, help="Length of prefix to remove (default: 3, required for 'remove' action).")
+    parser = argparse.ArgumentParser(description="批次修改檔案名稱前綴")
+    parser.add_argument("action", choices=["add", "remove"], help="執行動作：add 或 remove")
+    parser.add_argument("--input", "-i", default=".", help="目標目錄")
+    parser.add_argument("--prefix", "-p", default="", help="要增加的前綴字串")
+    parser.add_argument("--length", "-l", type=int, default=0, help="要移除的前綴長度")
     args = parser.parse_args()
 
-    if args.action == "add":
-        if args.prefix:
-            add_prefix(args.input, args.prefix)
-        else:
-            print("Error: --prefix is required for 'add' action.")
-    elif args.action == "remove":
-        remove_prefix(args.input, args.length)
+    if args.action == "add" and not args.prefix:
+        print("錯誤：使用 add 時必須提供 --prefix")
+    else:
+        param = args.prefix if args.action == "add" else args.length
+        rename_files(args.input, args.action, param)
