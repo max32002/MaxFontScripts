@@ -136,7 +136,7 @@ def main():
     parser.add_argument("--input", "-i", required=True, help="輸入字型 (.ttf/.sfdir)")
     parser.add_argument("--output", "-o", help="輸出路徑")
     parser.add_argument("--svg_path", "-s", default=".", help="SVG 資料夾")
-    parser.add_argument("--filename_source", choices=['char', 'unicode_hex', 'unicode_int'], 
+    parser.add_argument("--filename_source", "-f", choices=['char', 'unicode_hex', 'unicode_int'], 
                         default="unicode_int", help="檔名解析格式")
     parser.add_argument('--enable_scale', action='store_true', help='縮放至 Ascender')
     parser.add_argument('--disable_simplify', action='store_true', help='停用路徑簡化')

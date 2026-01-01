@@ -1,73 +1,72 @@
 #!/usr/bin/env python3
 #encoding=utf-8
 import argparse
-import platform
-import os
+from pathlib import Path
 
 IMG_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.gif', '.tif', '.tiff', '.svg', '.kra', '.psd'}
 
-def output_to_file(myfile, myfont_set):
-    full_text = []
-    for item in myfont_set:
-        try:
-            output_string = "%s" % (chr(item))
-            full_text.append(output_string)
-        except Exception as exc:
-            print("error item:%d" %(item))
-            print("error item(hex):%s" %(str(hex(item))))
-            raise
-
-    myfile.write(''.join(full_text))
-
 def save_set_to_file(sorted_set, filename_output):
-    outfile = None
-    if platform.system() == 'Windows':
-        outfile = open(filename_output, 'w', encoding='UTF-8')
-    else:
-        outfile = open(filename_output, 'w')
-
-    output_to_file(outfile ,sorted_set)
-    outfile.close()
-    outfile = None
+    try:
+        with open(filename_output, 'w', encoding='utf-8') as f:
+            full_text = "".join(chr(item) for item in sorted_set)
+            f.write(full_text)
+    except Exception as e:
+        print(f"寫入檔案時發生錯誤: {e}")
 
 def main(args):
-    source_folder = args.input
-    filename_output = args.output
+    source_folder = Path(args.input)
+    if not source_folder.is_dir():
+        print("輸入的路徑不是資料夾")
+        return
+
     source_unicode_set = set()
 
-    target_folder_list = os.listdir(source_folder)
-    for filename in target_folder_list:
-        file_path = os.path.join(source_folder, filename)
-        if os.path.isfile(file_path): # check if file
-            _, file_extension = os.path.splitext(filename)
-            file_extension = file_extension.lower()
-            if file_extension in IMG_EXTENSIONS:
-                char_string = os.path.splitext(filename)[0]
-                if len(char_string) > 0:
-                    if char_string.isnumeric():
-                        char_int = int(char_string)
-                        if char_int > 0 and char_int < 0x110000:
-                            source_unicode_set.add(char_int)
+    for file_path in source_folder.iterdir():
+        if file_path.is_file() and file_path.suffix.lower() in IMG_EXTENSIONS:
+            char_string = file_path.stem
+            
+            try:
+                if args.filename_source == 'unicode_int':
+                    char_int = int(char_string)
+                elif args.filename_source == 'unicode_hex':
+                    char_int = int(char_string, 16)
+                else:
+                    # 處理單一字元模式
+                    if len(char_string) > 0:
+                        char_int = ord(char_string[0])
+                    else:
+                        continue
 
-    if len(source_unicode_set) > 0:
-        source_name = os.path.basename(os.path.normpath(source_folder))
+                # 檢查是否在有效的 Unicode 範圍內
+                if 0 <= char_int < 0x110000:
+                    source_unicode_set.add(char_int)
+            except ValueError:
+                continue
+
+    if source_unicode_set:
+        sorted_set = sorted(list(source_unicode_set))
+        filename_output = args.output
+        
         if filename_output == "output.txt":
-            filename_output = "charset_%s.txt" % source_name
+            filename_output = f"charset_{source_folder.name}.txt"
 
-        sorted_set=sorted(source_unicode_set)
         save_set_to_file(sorted_set, filename_output)
 
-        print("input:", source_folder)
-        print("output:", filename_output)
-        print("charset length:", len(sorted_set))
+        print(f"輸入目錄: {source_folder}")
+        print(f"輸出檔案: {filename_output}")
+        print(f"解析格式: {args.filename_source}")
+        print(f"字元數量: {len(sorted_set)}")
     else:
-        print("source folder is empty or no supported image files!")
+        print("資料夾內沒有符合條件的圖片檔案或解析失敗")
 
 def cli():
-    parser = argparse.ArgumentParser(
-        description="get ttf chars list from image files")
-    parser.add_argument("input", help="輸入目錄路徑。")
-    parser.add_argument("--output", help=".txt file path", default="output.txt", type=str)
+    parser = argparse.ArgumentParser(description="從圖片檔名獲取字型清單")
+    parser.add_argument("input", help="輸入目錄路徑")
+    parser.add_argument("--output", "-o", help="輸出文件路徑", default="output.txt")
+    parser.add_argument("--filename_source", "-f", 
+                        choices=['char', 'unicode_hex', 'unicode_int'], 
+                        default="unicode_int", 
+                        help="檔名解析格式")
 
     args = parser.parse_args()
     main(args)
