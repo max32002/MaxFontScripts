@@ -187,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument("--reverse", action="store_true", help="反轉源圖像和字型圖像的位置。")
 
     # 其他參數
-    parser.add_argument('--filename_rule', type=str, default="seq", choices=['seq', 'char', 'unicode_int', 'unicode_hex'])
+    parser.add_argument('--filename_rule', type=str, default="unicode_int", choices=['seq', 'char', 'unicode_int', 'unicode_hex'])
     parser.add_argument("--filename_prefix", type=str, default="", help="範例標籤（用於檔案名稱前綴）。")
     parser.add_argument("--filter_hashes", action="store_true", help="過濾重複的雜湊值。")
     parser.add_argument("--shuffle", action="store_true", help="處理字元集之前先隨機排序。")
