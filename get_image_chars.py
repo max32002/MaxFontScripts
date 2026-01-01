@@ -31,13 +31,11 @@ def main(args):
                 elif args.filename_source == 'unicode_hex':
                     char_int = int(char_string, 16)
                 else:
-                    # 處理單一字元模式
                     if len(char_string) > 0:
                         char_int = ord(char_string[0])
                     else:
                         continue
 
-                # 檢查是否在有效的 Unicode 範圍內
                 if 0 <= char_int < 0x110000:
                     source_unicode_set.add(char_int)
             except ValueError:
@@ -45,10 +43,13 @@ def main(args):
 
     if source_unicode_set:
         sorted_set = sorted(list(source_unicode_set))
-        filename_output = args.output
         
-        if filename_output == "output.txt":
-            filename_output = f"charset_{source_folder.name}.txt"
+        # 判斷輸出檔名
+        if args.output:
+            filename_output = args.output
+        else:
+            # 如果 user 沒輸入，使用資料夾名稱加上 .txt
+            filename_output = f"{source_folder.name}.txt"
 
         save_set_to_file(sorted_set, filename_output)
 
@@ -62,7 +63,7 @@ def main(args):
 def cli():
     parser = argparse.ArgumentParser(description="從圖片檔名獲取字型清單")
     parser.add_argument("input", help="輸入目錄路徑")
-    parser.add_argument("--output", "-o", help="輸出文件路徑", default="output.txt")
+    parser.add_argument("--output", "-o", help="輸出文件路徑", default=None)
     parser.add_argument("--filename_source", "-f", 
                         choices=['char', 'unicode_hex', 'unicode_int'], 
                         default="unicode_int", 
