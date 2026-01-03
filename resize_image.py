@@ -1,155 +1,70 @@
-#!/usr/bin/env python3
-#encoding=utf-8
-
-import os
-
-# for read bmp.
+import argparse
+from pathlib import Path
 from PIL import Image
 
-import argparse
+def resize_image(input_path, width, ext, output_path):
+    try:
+        with Image.open(input_path) as img:
+            # 計算新尺寸
+            target_width = width if width > 0 else img.size[0]
+            ratio = target_width / float(img.size[0])
+            new_height = int(float(img.size[1]) * ratio)
+            
+            resized_img = img.resize((target_width, new_height), Image.Resampling.LANCZOS)
 
-def resize(source, target, width):
-    import PIL.Image
-    if not hasattr(PIL.Image, 'Resampling'):  # Pillow<9.0
-        PIL.Image.Resampling = PIL.Image
-    # Now PIL.Image.Resampling.BICUBIC is always recognized.
+            # 處理副檔名轉換與模式相容性
+            target_ext = ext.strip(".") if ext else input_path.suffix.strip(".")
+            save_format = target_ext.upper()
+            if save_format == "JPG":
+                save_format = "JPEG"
 
-    ret = False
+            # 如果要存成 JPEG 但原圖有透明層，需轉換模式
+            if save_format == "JPEG" and resized_img.mode in ("RGBA", "P"):
+                resized_img = resized_img.convert("RGB")
 
-    im = Image.open(source)
+            # 確保輸出路徑的資料夾存在
+            output_path = Path(output_path).with_suffix(f".{target_ext}")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    ratio = 1
-    if width is None:
-        width = im.size[0]
-    else:
-        ratio = float(width)/im.size[0]
-    height = int(im.size[1]*ratio)
-    # Image resizing methods resize() and thumbnail() take a resample argument, 
-    # which tells which filter should be used for resampling. 
-    # Possible values are: 
-    # PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC and PIL.Resampling.LANCZOS. 
-    # Almost all of them were changed in this version.
-    if im.size[0] > 0:
-        nim = im.resize( (width, height), PIL.Image.Resampling.BICUBIC )
+            resized_img.save(output_path, format=save_format)
+            print(f"處理完成：{output_path}")
+    except Exception as e:
+        print(f"跳過檔案 {input_path}，錯誤：{e}")
 
-        print("image.mode:", nim.mode)
-        #print("image.getbands():", nim.getbands())
-
-        split_tup = os.path.splitext(target)
-        file_extension = split_tup[1].upper()
-
-        need_convert_rgb = False
-        if file_extension == '.JPG' or file_extension == '.JPEG':
-            need_convert_rgb = True
-
-        if file_extension == '.BMP':
-            need_convert_rgb = True
-
-        if need_convert_rgb:
-            # convert to white
-            if nim.mode == "RGBA":
-                background = Image.new("RGB", nim.size, (255, 255, 255))
-                background.paste(nim, mask=nim.split()[3])
-                nim = background
-
-            #nim = nim.convert('RGB')
-
-        nim.save(target)
-        ret = True
-
-    return ret
-
-def t_or_f(arg):
-    ua = str(arg).upper()
-    if 'TRUE'.startswith(ua):
-       return True
-    elif 'FALSE'.startswith(ua):
-       return False
-    else:
-       pass  #error condition maybe?
-
-def convert(args):
-
-    source, target = args.input, args.output
-    width = args.width
-    overwrite = t_or_f(args.overwrite)
-    mode = args.mode
-
-    if target is None:
-        target = source
-
-    pass_check = True
-    if pass_check:
-        if not os.path.exists(source):
-            pass_check = False
-            print("Error: source image[%s] not exists." % (source))
-
-    if pass_check:
-        if not width is None:
-            if width <= 0:
-                pass_check = False
-                print("Error: size format wrong")
-
-    # rename target filename.
-    if pass_check:
-        if not overwrite:
-            if os.path.exists(target):
-                # this will return a tuple of root and extension
-                split_tup = os.path.splitext(target)
-                print(split_tup)
-                 
-                # extract the file name and extension
-                file_name = split_tup[0]
-                file_extension = split_tup[1]
-                 
-                #print("File Name: ", file_name)
-                #print("File Extension: ", file_extension)
-                target = "%s_x%d%s" % (file_name, width, file_extension)
-
-    print("source:", source)
-    print("target:", target)
-    print("new width:", width)
-    print("overwrite:", overwrite)
-    print("mode:", mode)
-
-    if pass_check:
-        is_convert = False
-        is_convert = resize(source, target, width)
-
-
-def cli():
-    parser = argparse.ArgumentParser(
-            description="resize image to new width")
-
-    parser.add_argument("--input",
-        help="source image",
-        required=True,
-        type=str)
-
-    parser.add_argument("--output",
-        help="target image",
-        type=str)
-
-    parser.add_argument("--width",
-        help="new target width",
-        required=False,
-        type=int)
-
-    parser.add_argument("--mode",
-        help="resize mode",
-        default='BICUBIC',
-        choices=['NEAREST','BILINEAR','BICUBIC','LANCZOS'],
-        type=str)
-
-    parser.add_argument("--overwrite",
-        help="overwrite target file",
-        default='True',
-        type=str)
+def main():
+    parser = argparse.ArgumentParser(description="圖片批次縮放工具")
+    parser.add_argument("input", help="輸入檔案或資料夾路徑")
+    parser.add_argument("-w", "--width", type=int, default=0, help="新的寬度，設為 0 則保持原寬度")
+    parser.add_argument("-e", "--ext", help="新的副檔名")
+    parser.add_argument("-p", "--postfix", type=str, default="_resized", help="後綴")
+    parser.add_argument("-o", "--output", type=str, default="", help="輸出路徑或檔名")
 
     args = parser.parse_args()
-    convert(args)
+    input_path = Path(args.input)
 
+    if not input_path.exists():
+        print("路徑不存在")
+        return
+
+    valid_exts = {'.jpg', '.jpeg', '.png', '.pbm', '.pgm', '.ppm', '.bmp', '.tif', '.tiff', '.webp'}
+
+    if input_path.is_dir():
+        # 處理資料夾
+        output_folder = Path(args.output) if args.output else input_path / "resized"
+        for file in input_path.iterdir():
+            if file.suffix.lower() in valid_exts:
+                target_path = output_folder / file.name
+                resize_image(file, args.width, args.ext, target_path)
+    
+    elif input_path.is_file():
+        # 處理單一檔案
+        if args.output:
+            target_path = Path(args.output)
+        else:
+            new_name = f"{input_path.stem}{args.postfix}{input_path.suffix}"
+            target_path = input_path.parent / new_name
+        
+        resize_image(input_path, args.width, args.ext, target_path)
 
 if __name__ == "__main__":
-    cli()
-
+    main()
