@@ -46,7 +46,7 @@ def main():
         return
 
     if base_path.is_file():
-        process_file(base_path, pattern, replacement)
+        process_file(base_path, pattern, args.replacement)
     elif base_path.is_dir():
         # 根據是否遞迴選擇 glob 或 rglob
         files = base_path.rglob(args.filter) if args.recursive else base_path.glob(args.filter)
