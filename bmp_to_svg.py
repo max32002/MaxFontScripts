@@ -12,12 +12,13 @@ from tqdm import tqdm
 
 # --- Potrace 參數預設值設定 ---
 POTRACE_PRESETS = {
-    "roundcap":    ["-a", "1.2", "-t", "2", "-O", "0.2"], # 圓體 (ZenMaru)
-    "squarecap":   ["-a", "1.0", "-t", "2", "-O", "0.2"], # 黑體 (Noto Sans)
-    "serif":       ["-a", "0.8", "-t", "1", "-O", "0.1"], # 襯線 (Noto Serif/明體)
-    "calligraphy": ["-a", "0.8", "-t", "3", "-O", "0"],   # 毛筆 (保留墨跡細節)
-    "pixel":       ["-a", "0",   "-t", "0", "-O", "0"],   # 像素 (完全直角)
-    "decorative":  ["-a", "0.9", "-t", "1", "-O", "0.1"]  # 藝術裝飾 (細節豐富)
+    "roundcap":    ["-a", "1.2", "-t", "2", "-O", "0.2", "-u", "10"], # 圓體 (ZenMaru)
+    "squarecap":   ["-a", "1.0", "-t", "2", "-O", "0.2", "-u", "10"], # 黑體 (Noto Sans), potrace defalut
+    "serif":       ["-a", "0.8", "-t", "1", "-O", "0.1", "-u", "10"], # 襯線 (Noto Serif/明體)
+    "calligraphy": ["-a", "0.8", "-t", "3", "-O", "0", "-u", "10"],   # 毛筆 (保留墨跡細節)
+    "pixel":       ["-a", "0",   "-t", "0", "-O", "0", "-u", "10"],   # 像素 (完全直角)
+    "decorative":  ["-a", "0.9", "-t", "1", "-O", "0.1", "-u", "10"], # 藝術裝飾 (細節豐富)
+    "test":        ["-a", "0.5", "-t", "1", "-O", "0.1", "-u", "5"]   # for test
 }
 
 # --- 日誌與進度條相容設定 ---
@@ -144,7 +145,7 @@ def cli():
     # 新增 stroke_cap 參數
     parser.add_argument(
             "--stroke_cap", "-c", 
-            choices=["roundcap", "squarecap", "serif", "calligraphy", "pixel", "decorative"], 
+            choices=["roundcap", "squarecap", "serif", "calligraphy", "pixel", "decorative", "test"], 
             default="roundcap", 
             help=(
                 "Preset style: "

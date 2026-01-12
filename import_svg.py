@@ -76,11 +76,11 @@ def import_svg_to_glyphs(myfont, svg_path, filename_rule, scale, simplify, detec
                 glyph = myfont[unicode_int]
                 previous_width = glyph.width
                 glyph.clear()
-                glyph.importOutlines(str(svg_file), scale=scale, simplify=simplify)
+                glyph.importOutlines(str(svg_file))
                 glyph.width = previous_width 
             else:
                 glyph = myfont.createChar(unicode_int)
-                glyph.importOutlines(str(svg_file), scale=scale, simplify=simplify)
+                glyph.importOutlines(str(svg_file))
                 glyph.width = detected_width 
             
             import_char_list.add(glyph.originalgid)
@@ -109,9 +109,14 @@ def import_main(args):
 
     myfont = fontforge.open(str(in_path))
 
+    enable_scale = args.enable_scale
+    disable_simplify = args.disable_simplify
+    #enable_scale = True
+    #disable_simplify = True
+    
     imported = import_svg_to_glyphs(
         myfont, args.svg_path, args.filename_rule, 
-        args.enable_scale, not args.disable_simplify, detected_width
+        enable_scale, not disable_simplify, detected_width
     )
 
     if imported:
