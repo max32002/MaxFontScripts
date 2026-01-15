@@ -24,6 +24,7 @@ def reduce_ink_bleeding(img_bin, kernel_size=3):
     
     return processed
 
+# PS: fast 造成部份 shape 無法 match, 因此改用 hit_miss
 def apply_pattern_cleaning_fast(img_bin, patterns_list):
     """
     優化後的 Pattern 清理：確保處理後依然是二值圖
@@ -54,6 +55,39 @@ def apply_pattern_cleaning_fast(img_bin, patterns_list):
                 # 使用旋轉後的 curr_h, curr_w 進行切片賦值
                 processed[y:y+curr_h, x:x+curr_w] = r_rot
                 
+    return processed
+
+def apply_pattern_cleaning_hitmiss(img_bin, patterns_list):
+    processed = img_bin.copy()
+    img_h, img_w = processed.shape
+    
+    for pattern, replacement in patterns_list:
+        # 1 代表找白點，-1 代表找黑點
+        hm_kernel = np.where(pattern > 0, 1, -1).astype(np.int8)
+        
+        for i in range(4):
+            p_rot = np.rot90(hm_kernel, k=i)
+            r_rot = np.rot90(replacement, k=i)
+            
+            # 執行 Hit-or-Miss 變換
+            hit_mask = cv2.morphologyEx(processed, cv2.MORPH_HITMISS, p_rot)
+            
+            # 找到匹配點的座標
+            loc = np.where(hit_mask > 0)
+            h, w = p_rot.shape
+            offset_y, offset_x = h // 2, w // 2
+            
+            for y, x in zip(*loc):
+                start_y = y - offset_y
+                start_x = x - offset_x
+                end_y = start_y + h
+                end_x = start_x + w
+                
+                # 關鍵修正：確保替換範圍完全在影像邊界內
+                # fix: 處理檔案時發生錯誤: could not broadcast input array from shape (6,6) into shape (4,4)
+                if start_y >= 0 and start_x >= 0 and end_y <= img_h and end_x <= img_w:
+                    processed[start_y:end_y, start_x:end_x] = r_rot * 255
+                    
     return processed
 
 def apply_blur_and_threshold(cleaned):
@@ -135,6 +169,23 @@ def get_patterns():
         [1, 1, 0, 0]
     ], dtype=np.uint8))
 
+    p.append(np.array([
+        [1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 0, 0],
+        [1, 1, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0]
+    ], dtype=np.uint8))
+    r.append(np.array([
+        [1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 0, 0],
+        [1, 1, 1, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0]
+    ], dtype=np.uint8))
+
     raw_patterns = []
     for idx in range(len(p)):
         raw_patterns.append( (p[idx], r[idx]))
@@ -178,17 +229,16 @@ def process_file(file_info, patterns):
     img_bin = reduce_ink_bleeding(img_bin, kernel_size=3)
 
     # 3. 第一次清理雜點 (針對鋸齒)
-    patterns_255 = [(p * 255, r * 255) for p, r in patterns]
-    cleaned = apply_pattern_cleaning_fast(img_bin, patterns_255)
+    #patterns_255 = [(p * 255, r * 255) for p, r in patterns]
+    for idx in range(2):
+        #img_bin = apply_pattern_cleaning_fast(img_bin, patterns_255)
+        img_bin = apply_pattern_cleaning_hitmiss(img_bin, patterns)
 
-    # 4. 平滑化 (包含強制二值化回歸)
-    final_bin = apply_blur_and_threshold(cleaned)
-
-    # 5. 第二次清理 (處理平滑化後可能產生的特定單像素孤島)
-    final_bin = apply_pattern_cleaning_fast(final_bin, patterns_255)
+        # 4. 平滑化 (包含強制二值化回歸)
+        img_bin = apply_blur_and_threshold(img_bin)
 
     # 6. 轉回白底黑字
-    final_output = cv2.bitwise_not(final_bin)
+    final_output = cv2.bitwise_not(img_bin)
     cv2.imwrite(output_path, final_output)
     print(f"處理完成: {os.path.basename(output_path)}")
 
