@@ -108,33 +108,12 @@ def clear_glyph(myfont, selected_chars, skip_alt=False):
 
 
 def cli():
-    parser = argparse.ArgumentParser(
-            description="clear glyph from font")
-
-    parser.add_argument("--input",
-        help="input font project or file",
-        required=True,
-        type=str)
-
-    parser.add_argument("--output",
-        help="output font project or file",
-        default=None,
-        type=str)
-
-    parser.add_argument("--string",
-        help="selected string",
-        default='',
-        type=str)
-
-    parser.add_argument("--file",
-        help="selected string file",
-        default='',
-        type=str)
-
-    parser.add_argument("--skip_alt",
-        help="let all alt char alive",
-        action='store_true')
-
+    parser = argparse.ArgumentParser( description="clear glyph from font")
+    parser.add_argument("input", help="input font project or file", type=str)
+    parser.add_argument("--output", "-o", help="output font project or file", default=None, type=str)
+    parser.add_argument("--string", "-s", help="selected string", default='', type=str)
+    parser.add_argument("--file", "-f", help="selected string file", default='', type=str)
+    parser.add_argument("--skip_alt", help="let all alt char alive", action='store_true')
     args = parser.parse_args()
 
     pass_precheck = True
