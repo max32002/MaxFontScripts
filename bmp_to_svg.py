@@ -65,6 +65,7 @@ def process_single_file(binray_path, input_path, output_folder, cwd, potrace_arg
             temp_pbm = pathlib.Path(temp_path)
 
             image = cv2.imread(str(input_path), cv2.IMREAD_GRAYSCALE)
+            ret, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
             if image is None:
                 return 2, f"Read Error: {input_path.name}"
             cv2.imwrite(str(temp_pbm), image)
@@ -152,7 +153,7 @@ def cli():
     parser.add_argument("--output", "-o", help="Target folder")
     parser.add_argument("--single_thread", action="store_true", help="Single thread mode")
     parser.add_argument("--cwd", help="Working directory", default=None)
-    parser.add_argument("--binary", help="Potrace/VTracer/AutoTrace/Inkscape/osra path", default="vtracer")
+    parser.add_argument("--binary", "-b", help="Potrace/VTracer/AutoTrace/Inkscape/osra path", default="potrace")
 
     # 新增 stroke_cap 參數
     parser.add_argument(
